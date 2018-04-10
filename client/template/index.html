@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Reviewer &beta;</title>
+        <link href="https://fonts.googleapis.com/css?family=Slabo+27px" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.6.0/styles/github.min.css">
+        <link rel="stylesheet" type="text/css" href="diff2html.css">
+
+        <!-- Latest compiled and minified CSS -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+        <style>
+            .commentsWrapper {
+                background-color: rgb(247, 247, 247);
+                border: 1px solid rgb(221, 221, 221);
+                padding: 10px 40px;
+                margin-left: -5px;
+                display: block;
+                overflow: hidden;
+            }
+
+            .commentForm {
+                border: 1px solid rgb(221, 221, 221);
+                border-radius: 5px;
+                padding: 10px;
+                width: 90%;
+                background-color: #f9f9ff;
+                display: block;
+                margin: 10px 0px;
+            }
+
+            .commentAns {
+                width: 70%;
+                margin-left: 20px;
+                display: inline;
+            }
+
+            .commentAns button {
+                float: right;
+            }
+
+            .time {
+                font-size: 8pt;
+                margin-bottom: 10px;
+                color: #bbbbbb;
+            }
+
+            .options {
+                margin-top: 5px;
+                font-size: 9pt;
+            }
+
+            .option {
+                margin-right: 10px;
+            }
+
+            .option a {
+                text-decoration: none;
+            }
+
+            .option a:visited {
+                color: blue;
+            }
+
+            .author {
+                font-weight: bold;
+                color: #007;
+            }
+
+            .meta {
+            }
+
+            .theader,.tvalue {
+                padding: 5px 20px;
+                border: 1px solid rgb(221, 221, 221);
+            }
+
+            .tvalue {
+                color: #229;
+            }
+
+            .theader {    
+                background-color: rgb(241, 241, 241);
+                color: #007;
+                font-weight: bold;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div style="margin: auto; text-align: center; font-family: 'Slabo 27px', serif;">
+            <h1 style="color: #7777cc; font-size: 45pt;">Reviewer <span style="font-size: 15pt; color: #ff0000; vertical-align: top;">&beta;</span></h1>
+        <div>
+
+        <div class="info" style="margin: auto; text-align: left; display: inline-block;">
+            <table class="meta">
+                <tr>
+                    <td class="theader">Автор</td>
+                    <td class="tvalue">Иван Иванов</td>
+                </tr>
+                <tr>
+                    <td class="theader">Ревьюер</td>
+                    <td class="tvalue">Дмитрий Беляков</td>
+                </tr>
+                <tr>
+                    <td class="theader">Дата создания</td>
+                    <td class="tvalue">2017-03-15</td>
+                </tr>
+                <tr>
+                    <td class="theader">Ссылка на это ревью</td>
+                    <td class="tvalue"><a href="#">http://reviewer.dbeliakov.ru/review/1</a></td>
+                </tr>
+            </table>
+        </div>
+
+        <div id="diff">
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.3/jquery.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.6.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.6.0/languages/go.min.js"></script>
+        <script type="text/javascript" src="diff2html.js"></script>
+        <script type="text/javascript" src="diff2html-ui.js"></script>
+        <script>
+            var comment = `
+<div class="commentsWrapper d2h-file-name-wrapper">
+    <div class="commentForm">
+        <div class="author">Дмитрий Беляков</div>
+        <div class="time">2017-03-15 15:02</div>
+        <div class="comment">Надо бы это оставить как есть, не думаешь?</div>
+        <div class="options">
+            <span class="option"><a href="#">Ответить</a></span>
+            <span class="option"><a href="#" onclick="markAsRead()">Пометить как прочитанное</a></span>
+        </div>
+    </div>
+    <div class="commentAns">
+        <form>
+            <div class="form-group">
+                <label for="comment">Комментарий:</label>
+                <textarea class="form-control" rows="5" id="comment"></textarea>
+            </div>
+            <button class="btn btn-default" type="submit">Добавить</button>
+        </form>
+    </div>
+</div>`;
+
+
+            function markAsRead() {
+                $(".commentForm").css({"background-color": "white"});
+                var options = $(".options");
+                options.children('.option')[1].remove();
+                options.append('<span class="option"><a href="#" onclick="markAsUnread()">Отметить как непрочитанное</a></span>')
+            }
+
+            function markAsUnread() {
+                $(".commentForm").css({"background-color": "#f9f9ff"});
+                var options = $(".options");
+                options.children('.option')[1].remove();
+                options.append('<span class="option"><a href="#" onclick="markAsRead()">Отметить как прочитанное</a></span>')
+            }
+
+            function getDiff() {
+                $.get( "test.diff", function(data) {
+                    var j = Diff2Html.getJsonFromDiff(data);
+                    var container = $('#diff');
+                    var diff2htmlUi = new Diff2HtmlUI({diff: data});
+
+                    container.css({'width': '80%'});
+                    container.css({'margin': 'auto'});
+                    container.css({'margin-top': "30px"});
+
+                    diff2htmlUi.draw(container, {
+                        outputFormat: "line-by-line",
+                        showFiles: false,
+                        matching: 'words',
+                        matchWordsThreshold: 0.25,
+                        matchingMaxComparisons: 2500,
+                        synchronisedScroll: true
+                    });
+                    diff2htmlUi.fileListCloseable(container, false);
+                    diff2htmlUi.highlightCode(container);
+
+                    $("[class*='d2h-code-linenumber']").click(function() {
+                        var codeLine = $(this).next();
+                        if (codeLine.children(".commentsWrapper").length == 0) {
+                            codeLine.append(comment);
+                        } else {
+                            codeLine.children(".commentsWrapper").remove();
+                        }
+                    });
+                });
+            }
+            getDiff();
+        </script>
+    </body>
+</html>
