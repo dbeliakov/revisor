@@ -1,5 +1,7 @@
 <template>
     <div id="login">
+        <Header></Header>
+
         <div class="column">
             <form class="ui large form" v-on:submit.prevent="login()">
                 <div class="ui">
@@ -22,7 +24,7 @@
 
             </form>
             <div class="ui message">
-                <a href="#">Регистрация</a>
+                <router-link :to="{name: 'SignUp'}">Регистрация</router-link>
             </div>
         </div>
     </div>
@@ -42,9 +44,17 @@ export default {
   },
   methods: {
     login () {
+      if (this.username.length === 0) {
+        this.error = 'Логин обязателен'
+        return
+      }
+      if (this.password.length === 0) {
+        this.error = 'Пароль обязателен'
+        return
+      }
+
       this.$auth.login({
-        data: {login: this.login, password: this.password},
-        fetchUser: false
+        data: {username: this.username, password: this.password}
       }).then(() => {
         console.log('success')
         console.log(this.$auth)
@@ -52,7 +62,7 @@ export default {
         console.log(err)
         if (!err.response.status) {
           this.error = 'Ошибка сети'
-        } else if (err.response.status === 401) {
+        } else if (err.response.status === 406) {
           this.error = 'Неверный логин и/или пароль'
         } else if (err.response.status === 400) {
           this.error = 'Некорректный логин и/или пароль'
@@ -65,7 +75,7 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
     body > .grid {
       height: 100%;
     }
