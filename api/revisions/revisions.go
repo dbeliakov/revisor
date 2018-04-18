@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/pmezard/go-difflib/difflib"
+	uuid "github.com/satori/go.uuid"
 )
 
 type modificationType int
@@ -33,6 +34,7 @@ const (
 type Line struct {
 	Content  string
 	Revision int
+	ID       string
 }
 
 // Modification represents changes to get next revision of file
@@ -84,7 +86,11 @@ func NewVersionedFile(name string, content []string) VersionedFile {
 		Original: File{make([]Line, 0, len(content))},
 	}
 	for _, line := range content {
-		file.Original.Lines = append(file.Original.Lines, Line{Content: line, Revision: 0})
+		u, err := uuid.NewV4()
+		if err != nil {
+			panic(errors.New("Assert: " + err.Error()))
+		}
+		file.Original.Lines = append(file.Original.Lines, Line{Content: line, Revision: 0, ID: u.String()})
 	}
 	return file
 }

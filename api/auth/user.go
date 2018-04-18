@@ -14,11 +14,10 @@ type User struct {
 	LastName     string
 	Login        string
 	PasswordHash string
-	Email        string
 }
 
 // NewUser creates new user object
-func NewUser(firstName, lastName, login, password, email string) (User, error) {
+func NewUser(firstName, lastName, login, password string) (User, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), hashCost)
 	if err != nil {
 		return User{}, err
@@ -28,11 +27,20 @@ func NewUser(firstName, lastName, login, password, email string) (User, error) {
 		LastName:     lastName,
 		Login:        login,
 		PasswordHash: string(hash),
-		Email:        email,
 	}, nil
 }
 
 // CheckPassword compares password with PasswordHash
 func (user User) CheckPassword(password string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)) == nil
+}
+
+// SetPassword new password
+func (user *User) SetPassword(password string) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), hashCost)
+	if err != nil {
+		return err
+	}
+	user.PasswordHash = string(hash)
+	return nil
 }

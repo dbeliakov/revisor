@@ -1,72 +1,81 @@
 package database
 
 import (
-	"log"
+	"reviewer/api/config"
 	"reviewer/api/revisions"
 	"time"
 
 	"github.com/globalsign/mgo/bson"
-
-	"github.com/globalsign/mgo"
-)
-
-var (
-	session *mgo.Session
-)
-
-// TODO: config
-const (
-	mongoAddr     = "localhost:27017"
-	mongoDatabase = "reviewer"
 )
 
 const (
-	collectionName = "versioned_files"
+	collectionName = "reviews"
 )
 
-func init() {
-	mongoDBDialInfo := &mgo.DialInfo{
-		Addrs:    []string{mongoAddr},
-		Timeout:  60 * time.Second,
-		Database: mongoDatabase,
+// Review is database object of review
+type Review struct {
+	ID        bson.ObjectId `bson:"_id,omitempty"`
+	File      revisions.VersionedFile
+	Name      string
+	Owner     bson.ObjectId
+	Reviewers []bson.ObjectId
+	Updated   time.Time
+	Closed    bool
+	Accepted  bool
+}
+
+func toBsonIds(ids []string) []bson.ObjectId {
+	var result []bson.ObjectId
+	for _, id := range ids {
+		result = append(result, bson.ObjectIdHex(id))
 	}
-	var err error
-	session, err = mgo.DialWithInfo(mongoDBDialInfo)
-	if err != nil {
-		log.Panic(err)
+	return result
+}
+
+// NewReview creates versioned file which can be stored in db
+func NewReview(filename string, content []string, name string, owner string, reviewers []string) Review {
+	return Review{
+		File:      revisions.NewVersionedFile(filename, content),
+		Name:      name,
+		Owner:     bson.ObjectIdHex(owner),
+		Reviewers: toBsonIds(reviewers),
+		Updated:   time.Now(),
+		Closed:    false,
+		Accepted:  false,
 	}
 }
 
-// VersionedFile is database object of versioned file
-type VersionedFile struct {
-	ID bson.ObjectId `bson:"_id,omitempty"`
-	revisions.VersionedFile
-}
-
-// NewVersionedFile creates versioned file which can be stored in db
-func NewVersionedFile(filename string, content []string) VersionedFile {
-	return VersionedFile{
-		VersionedFile: revisions.NewVersionedFile(filename, content),
-	}
-}
-
-// LoadVersionedFile from database
-func LoadVersionedFile(id string) (VersionedFile, error) {
+// LoadReview from database
+func LoadReview(id string) (Review, error) {
 	s := session.Copy()
 	defer s.Close()
 
-	c := s.DB(mongoDatabase).C(collectionName)
-	var file VersionedFile
+	c := s.DB(config.MongoDatabase).C(collectionName)
+	var file Review
 	err := c.FindId(bson.ObjectIdHex(id)).One(&file)
 	return file, err
 }
 
-// Save versioned file to database
-func (file *VersionedFile) Save() error {
+// FindReviews with conditions
+func FindReviews(condition bson.M) ([]Review, error) {
 	s := session.Copy()
 	defer s.Close()
 
-	c := s.DB(mongoDatabase).C(collectionName)
+	c := s.DB(config.MongoDatabase).C(collectionName)
+	var files []Review
+	err := c.Find(condition).All(&files)
+	if err != nil {
+		return files, err
+	}
+	return files, nil
+}
+
+// Save versioned file to database
+func (file *Review) Save() error {
+	s := session.Copy()
+	defer s.Close()
+
+	c := s.DB(config.MongoDatabase).C(collectionName)
 	if !file.ID.Valid() {
 		file.ID = bson.NewObjectId()
 		err := c.Insert(nil, file)
@@ -74,5 +83,8 @@ func (file *VersionedFile) Save() error {
 	}
 
 	err := c.Update(bson.M{"_id": file.ID}, file)
-	return err
+	if err != nil {
+		return err
+	}
+	return nil
 }
