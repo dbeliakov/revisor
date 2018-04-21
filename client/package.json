@@ -16,7 +16,10 @@
     "@websanova/vue-auth": "^2.21.6-beta",
     "axios": "^0.18.0",
     "vue-axios": "^2.1.1",
-    "semantic-ui-css": "^2.3.1"
+    "semantic-ui-css": "^2.3.1",
+    "diff2html": "^2.3.3",
+    "highlightjs": "^9.10.0",
+    "jquery-ui": "^1.12.1"
   },
   "devDependencies": {
     "autoprefixer": "^7.1.2",

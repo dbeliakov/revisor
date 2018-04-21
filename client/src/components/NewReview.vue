@@ -1,30 +1,30 @@
 <template>
   <div id="new_review">
-  <h1>Новое ревью</h1>
-  <div class="column">
-    <form class="ui large form" v-on:submit.prevent="createNewReview()">
-      <div class="ui">
-        <div class="field">
-          <div class="ui input">
-            <input name="name" v-model="name" placeholder="Заголовок" type="text">
+    <h1>Новое ревью</h1>
+    <div class="column">
+      <form class="ui large form" v-on:submit.prevent="createNewReview()">
+        <div class="ui">
+          <div class="field">
+            <div class="ui input">
+              <input name="name" v-model="name" placeholder="Заголовок" type="text">
+            </div>
           </div>
-        </div>
-        <div class="field">
-          <div class="ui input">
-            <input name="reviewers" v-model="reviewers" placeholder="Ревьюеры" type="text">
+          <div class="field">
+            <div class="ui input">
+              <input name="reviewers" v-model="reviewers" placeholder="Ревьюеры" type="text">
+            </div>
           </div>
+          <div class="field">
+            <label for="file" class="ui icon button">
+              <i class="file icon"></i>
+              {{ filename }}</label>
+            <input type="file" id="file" style="display:none" v-on:change="changeFileName($event)">
+          </div>
+          <button class="ui fluid large blue submit button" type="submit">Создать ревью</button>
         </div>
-        <div class="field">
-          <label for="file" class="ui icon button">
-            <i class="file icon"></i>
-            {{ filename }}</label>
-          <input type="file" id="file" style="display:none" v-on:change="changeFileName($event)">
-        </div>
-        <button class="ui fluid large blue submit button" type="submit">Создать ревью</button>
-      </div>
-      <div class="ui negative message" v-if="error.length > 0">{{ error }}</div>
-    </form>
-  </div>
+        <div class="ui negative message" v-if="error.length > 0">{{ error }}</div>
+      </form>
+    </div>
   </div>
 </template>
 

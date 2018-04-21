@@ -3,7 +3,8 @@ package main
 import (
 	"net/http"
 	"os"
-	"reviewer/api/handlers"
+	"reviewer/api/auth"
+	"reviewer/api/revisions"
 
 	gh "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -13,25 +14,24 @@ func newRouter(base string) *mux.Router {
 	r := mux.NewRouter()
 
 	// Auth handlers
-	r.HandleFunc(base+"/auth/login", handlers.LoginHandler).Methods("POST")
-	r.HandleFunc(base+"/auth/signup", handlers.SignUpHandler).Methods("POST")
-	r.HandleFunc(base+"/auth/user", handlers.UserInfoHandler).Methods("GET")
-	r.HandleFunc(base+"/auth/change/password", handlers.ChangePasswordHandler).Methods("POST")
+	r.HandleFunc(base+"/auth/login", auth.LoginHandler).Methods("POST")
+	r.HandleFunc(base+"/auth/signup", auth.SignUpHandler).Methods("POST")
+	r.HandleFunc(base+"/auth/user", auth.UserInfoHandler).Methods("GET")
+	r.HandleFunc(base+"/auth/change/password", auth.ChangePasswordHandler).Methods("POST")
 
 	// Review handlers
-	r.HandleFunc(base+"/reviews/outgoing", handlers.OutgoingReviews).Methods("GET")
-	r.HandleFunc(base+"/reviews/incoming", handlers.IncomingReviews).Methods("GET")
-	r.HandleFunc(base+"/reviews/new", handlers.NewReview).Methods("POST")
+	r.HandleFunc(base+"/reviews/outgoing", revisions.OutgoingReviews).Methods("GET")
+	r.HandleFunc(base+"/reviews/incoming", revisions.IncomingReviews).Methods("GET")
+	r.HandleFunc(base+"/reviews/new", revisions.NewReview).Methods("POST")
+	r.HandleFunc(base+"/reviews/{id}", revisions.Review).Methods("GET")
+	r.HandleFunc(base+"/reviews/{id}/update", revisions.UpdateReview).Methods("POST")
+	r.HandleFunc(base+"/reviews/{id}/accept", revisions.Accept).Methods("GET")
+	r.HandleFunc(base+"/reviews/{id}/decline", revisions.Decline).Methods("GET")
 
 	return r
 }
 
 func main() {
-	/*a, _ := ioutil.ReadFile("test/a.cpp")
-	//b, _ := ioutil.ReadFile("test/b.cpp")
-	rw := database.NewReview("test.cpp", difflib.SplitLines(string(a)), "Тестовое задание", "5acdd916ed9b7ebab904f03b", []string{"5acdd916ed9b7ebab904f03b"})
-	rw.Save()*/
-
 	r := newRouter("/api")
 
 	// DEBUG

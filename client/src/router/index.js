@@ -5,6 +5,7 @@ import Login from '@/components/Login'
 import SignUp from '@/components/SignUp'
 import Profile from '@/components/Profile'
 import NewReview from '@/components/NewReview'
+import Review from '@/components/Review'
 
 Vue.use(Router)
 
@@ -37,6 +38,13 @@ export default new Router({
       path: '/review/new',
       name: 'NewReview',
       component: NewReview,
+      meta: {
+        auth: true
+      }
+    },
+    {
+      path: '/review/:id',
+      component: Review,
       meta: {
         auth: true
       }
