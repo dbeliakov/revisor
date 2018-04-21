@@ -9,7 +9,8 @@ import (
 )
 
 var (
-	session *mgo.Session
+	// Session to be shared between components
+	Session *mgo.Session
 )
 
 func init() {
@@ -19,7 +20,7 @@ func init() {
 		Database: config.MongoDatabase,
 	}
 	var err error
-	session, err = mgo.DialWithInfo(mongoDBDialInfo)
+	Session, err = mgo.DialWithInfo(mongoDBDialInfo)
 	if err != nil {
 		log.Panic(err)
 	}

@@ -69,20 +69,23 @@ var (
 )
 
 // UnmarshalForm from body and validate it
-func UnmarshalForm(r *http.Request, to interface{}) error {
+func UnmarshalForm(w http.ResponseWriter, r *http.Request, to interface{}) error {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
+		Error(w, http.StatusBadRequest, "Incorrect body")
 		return ErrIncorrectBody
 	}
 	err = json.Unmarshal(body, to)
 	if err != nil {
+		Error(w, http.StatusNotAcceptable, "Incorrect form fields")
 		return ErrIncorrectBody
 	}
 
 	validate := validator.New()
 	err = validate.Struct(to)
 	if err != nil {
-		return ErrIncorectFormFields
+		Error(w, http.StatusNotAcceptable, "Incorrect form fields")
+		return ErrIncorrectBody
 	}
 	return nil
 }
