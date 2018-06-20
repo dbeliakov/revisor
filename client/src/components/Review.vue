@@ -27,7 +27,7 @@
       </div>
     </div>
 
-    <div id="diff_view"></div>
+    <diff v-if="review" v-bind:diff="review.diff" :commentsList="review.comments" :reviewId="review_id" @update-all="updateReview()"></diff>
 
     <div class="ui modal" id="add_revision">
       <i class="close icon"></i>
@@ -63,58 +63,21 @@
 </template>
 
 <script>
-/* global Diff2HtmlUI */
+import Diff from '@/components/Diff'
+
 var $ = require('jquery')
 window.$ = $
 window.jQuery = $
 
-require('highlightjs')
-require('highlightjs/styles/github.css')
-require('diff2html')
-require('diff2html/dist/diff2html.css')
-require('diff2html/dist/diff2html-ui.js')
 require('semantic-ui-css/semantic.min.js')
 require('jquery-ui/ui/widgets/slider.js')
 require('jquery-ui/themes/base/all.css')
 
-function formatRangeUnified (start, stop) {
-  var beginning = start + 1
-  var length = stop - start
-  if (length === 1) {
-    return '' + beginning
-  }
-  if (length === 0) {
-    --beginning
-  }
-  return '' + beginning + ',' + length
-}
-
-function toDiffString (content) {
-  var result = ''
-  result += '--- ' + content.filename + '\n'
-  result += '+++ ' + content.filename + '\n'
-
-  for (var i = 0; i < content.groups.length; ++i) {
-    var group = content.groups[i]
-    result += '@@ -' + formatRangeUnified(group.old_range.from, group.old_range.to) + ' +' +
-      formatRangeUnified(group.new_range.from, group.new_range.to) + ' @@\n'
-    for (var l = 0; l < group.lines.length; ++l) {
-      var line = group.lines[l]
-      if (line.type === 'no') {
-        result += ' ' + line.old.content + '\n'
-      } else if (line.type === 'insert') {
-        result += '+' + line.new.content + '\n'
-      } else if (line.type === 'delete') {
-        result += '-' + line.old.content + '\n'
-      }
-    }
-  }
-
-  return result
-}
-
 export default {
   name: 'Review',
+  components: {
+    'diff': Diff
+  },
   props: ['id'],
   created () {
     this.updateReview()
@@ -257,38 +220,6 @@ export default {
     $route (to, from) {
       this.review = {}
       this.updateReview()
-    },
-    review () {
-      var diff2htmlUi = new Diff2HtmlUI({diff: toDiffString(this.review.diff)})
-      diff2htmlUi.draw('#diff_view', {
-        inputFormat: 'json',
-        outputFormat: 'line-by-line',
-        showFiles: false,
-        matching: 'none',
-        rawTemplates: {
-          'generic-line': `<tr>
-    <td class="{{lineClass}} {{type}}">
-      {{{lineNumber}}}
-    </td>
-    <td class="{{type}}">
-        <div class="{{contentClass}} {{type}}">
-        {{#content}}
-            <span class="d2h-code-line-ctn">{{{content}}}</span>
-        {{/content}}
-        </div>
-    </td>
-</tr>`
-        }
-      })
-      diff2htmlUi.highlightCode('#diff_view')
-
-      console.log($('tbody').length)
-      $('.d2h-diff-tbody').find('tr').each(function () {
-        var el = $(this)
-        el.find('.d2h-code-linenumber').click(() => {
-          $('<tr><td class="d2h-code-linenumber d2h-info"></td><td class="d2h-cntx">Комментарий</td></tr>').insertAfter(el)
-        })
-      })
     }
   }
 }

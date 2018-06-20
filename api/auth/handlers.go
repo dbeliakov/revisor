@@ -49,18 +49,20 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !database.LoginIsFree(form.Username) {
+	if !database.LoginIsFree(form.Username) { // TODO should be in one transaction with creation
 		utils.Error(w, http.StatusConflict, "Username is not free")
 		return
 	}
 
 	user, err := database.NewUser(form.FirstName, form.LastName, form.Username, form.Password)
 	if err != nil {
+		log.Print("Cannot create new user: ", err)
 		utils.Error(w, http.StatusInternalServerError, "Cannot create new user")
 		return
 	}
 	err = user.Save()
 	if err != nil {
+		log.Print("Cannot create new user: ", err)
 		utils.Error(w, http.StatusInternalServerError, "Cannot create new user")
 		return
 	}

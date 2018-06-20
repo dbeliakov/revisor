@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 	"reviewer/api/auth"
+	"reviewer/api/comments"
 	"reviewer/api/revisions"
 
 	gh "github.com/gorilla/handlers"
@@ -27,6 +28,9 @@ func newRouter(base string) *mux.Router {
 	r.HandleFunc(base+"/reviews/{id}/update", revisions.UpdateReview).Methods("POST")
 	r.HandleFunc(base+"/reviews/{id}/accept", revisions.Accept).Methods("GET")
 	r.HandleFunc(base+"/reviews/{id}/decline", revisions.Decline).Methods("GET")
+
+	// Comments handlers
+	r.HandleFunc(base+"/comments/add", comments.AddComment).Methods("POST")
 
 	return r
 }

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	auth "reviewer/api/auth/database"
 	"reviewer/api/auth/middlewares"
+	comments "reviewer/api/comments/database"
 	"reviewer/api/revisions/database"
 	"reviewer/api/utils"
 	"strconv"
@@ -173,9 +174,16 @@ var Review = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	comments, err := comments.RootCommentsForReview(review.ID.Hex())
+	if err != nil {
+		utils.Error(w, http.StatusInternalServerError, "Cannot calculate diff")
+		return
+	}
+
 	utils.Ok(w, &map[string]interface{}{
-		"info": review,
-		"diff": content,
+		"info":     review,
+		"diff":     content,
+		"comments": comments,
 	})
 })
 
