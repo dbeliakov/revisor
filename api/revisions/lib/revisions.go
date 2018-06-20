@@ -42,7 +42,7 @@ type Line struct {
 type Modification struct {
 	Type       modificationType
 	LineNumber int
-	Content    string
+	Content    Line
 }
 
 // Patch is a set of modifications to get next revision
@@ -130,7 +130,7 @@ func (file *VersionedFile) GetRevision(revision int) (File, error) {
 			result.Lines = append(
 				result.Lines[:mod.LineNumber+1],
 				append(
-					[]Line{Line{Content: mod.Content, Revision: i}},
+					[]Line{mod.Content},
 					result.Lines[mod.LineNumber+1:]...)...,
 			)
 		}
@@ -140,6 +140,7 @@ func (file *VersionedFile) GetRevision(revision int) (File, error) {
 
 // AddRevision adds new revision to the versioned file
 func (file *VersionedFile) AddRevision(content []string) error {
+	revisionsCount := file.RevisionsCount()
 	lastRevision, err := file.GetRevision(len(file.Patches))
 	if err != nil {
 		return err
@@ -165,10 +166,14 @@ func (file *VersionedFile) AddRevision(content []string) error {
 			}
 			if c.Tag == 'i' || c.Tag == 'r' {
 				for j := c.J1; j < c.J2; j++ {
+					u, err := uuid.NewV4()
+					if err != nil {
+						panic(errors.New("Assert: " + err.Error()))
+					}
 					patch.Modifications = append(patch.Modifications, Modification{
 						Type:       insertModification,
 						LineNumber: j - 1,
-						Content:    content[j],
+						Content:    Line{Content: content[j], Revision: revisionsCount, ID: u.String()},
 					})
 				}
 			}

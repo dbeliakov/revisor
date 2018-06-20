@@ -1,6 +1,7 @@
 package database
 
 import (
+	"log"
 	"reviewer/api/auth/lib"
 	"reviewer/api/config"
 	. "reviewer/api/database"
@@ -12,6 +13,34 @@ import (
 const (
 	userCollectionName = "users"
 )
+
+func init() {
+	s := Session.Copy()
+	defer s.Close()
+
+	c := collection(s)
+	indexes, err := c.Indexes()
+	if err != nil {
+		log.Print("Error while getting indexes: ", err)
+		indexes = []mgo.Index{}
+	}
+	for _, index := range indexes {
+		for _, key := range index.Key {
+			if key == "user.login" {
+				return
+			}
+		}
+	}
+
+	index := mgo.Index{
+		Key:    []string{"user.login"},
+		Unique: true,
+	}
+	err = c.EnsureIndex(index)
+	if err != nil {
+		panic(err)
+	}
+}
 
 func collection(session *mgo.Session) *mgo.Collection {
 	return session.DB(config.MongoDatabase).C(userCollectionName)
