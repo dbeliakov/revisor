@@ -1,7 +1,7 @@
 <template>
     <div>
         <div v-for="comment in comments" :key="comment.id" class="comment">
-            <div class="header"><span class="login">{{ comment.author.first_name }} {{ comment.author.last_name }} ({{ comment.author.username }})</span><span class="date">17 мая 2018 17:58</span></div>
+            <div class="header"><span class="login">{{ comment.author.first_name }} {{ comment.author.last_name }} ({{ comment.author.username }})</span><span class="date">{{ timeConverter(comment.created) }}</span></div>
             <div class="text">{{ comment.text }}</div>
             <div class="footer"><a href="#" @click.prevent="$emit('new-comment')">Ответить</a></div>
         </div>
@@ -11,7 +11,28 @@
 <script>
 export default {
   name: 'Comments',
-  props: ['comments']
+  props: ['comments'],
+  methods: {
+    timeConverter (timestamp) {
+      var toStr = function (val) {
+        if (val < 10) {
+          return '0' + val
+        }
+        return '' + val
+      }
+
+      var a = new Date(timestamp * 1000)
+      var months = ['Января', 'Февраля', 'Марта', 'Апреля', 'Мая', 'Июня', 'Июля', 'Августа',
+        'Сентября', 'Октября', 'Ноября', 'Декабря']
+      var year = a.getFullYear()
+      var month = months[a.getMonth()]
+      var date = a.getDate()
+      var hour = a.getHours()
+      var min = a.getMinutes()
+      var time = date + ' ' + month + ' ' + year + ' ' + toStr(hour) + ':' + toStr(min)
+      return time
+    }
+  }
 }
 </script>
 
