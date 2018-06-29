@@ -120,7 +120,7 @@ func ReviewsByConditions(condition bson.M) ([]Review, error) {
 	defer s.Close()
 
 	c := s.DB(config.MongoDatabase).C(collectionName)
-	var files []Review
+	files := make([]Review, 0)
 	err := c.Find(condition).Sort("-updated").All(&files)
 	if err != nil {
 		return files, err

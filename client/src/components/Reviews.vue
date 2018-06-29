@@ -1,5 +1,9 @@
 <template>
   <div style="margin: 20px 40px;">
+    <div class="ui checkbox" style="float: left; margin-bottom: 10px;">
+      <input name="example" type="checkbox" v-model="showClosed">
+      <label>Отображать закрытые</label>
+    </div>
     <table class="ui celled striped table">
       <thead>
         <tr><th>
@@ -9,14 +13,14 @@
           Создатель
         </th>
         <th>
-          Проверяющие
+          Ревьюеры
         </th>
         <th>
           Обновлено
         </th>
       </tr></thead>
       <tbody>
-        <tr v-for="review in reviews" :key="review.id"
+        <tr v-for="review in filteredReviews" :key="review.id"
             v-bind:class="{positive: review.closed && review.accepted, negative: review.closed && !review.accepted}">
           <td><router-link :to="'/review/' + review.id">{{review.name}}</router-link></td>
           <td class="collapsing">
@@ -39,13 +43,21 @@ export default {
   name: 'Reviews',
   props: ['type'],
   created () {
-    this.$http.get('/reviews/' + this.type).then((response) => {
-      this.reviews = response.data.data
-    })
+    this.updateReviewsList()
   },
   data () {
     return {
-      reviews: []
+      reviews: [],
+      showClosed: false
+    }
+  },
+  computed: {
+    filteredReviews () {
+      if (!this.showClosed) {
+        return this.reviews.filter(review => !review.closed)
+      } else {
+        return this.reviews
+      }
     }
   },
   methods: {
@@ -67,14 +79,17 @@ export default {
       var min = a.getMinutes()
       var time = date + ' ' + month + ' ' + year + ' ' + toStr(hour) + ':' + toStr(min)
       return time
+    },
+    updateReviewsList () {
+      this.$http.get('/reviews/' + this.type).then((response) => {
+        this.reviews = response.data.data
+      })
     }
   },
   watch: {
     $route (to, from) {
       this.reviews = []
-      this.$http.get('/reviews/' + this.type).then((response) => {
-        this.reviews = response.data.data
-      })
+      this.updateReviewsList()
     }
   }
 }

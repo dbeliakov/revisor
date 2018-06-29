@@ -11,7 +11,7 @@
           </div>
           <div class="field">
             <div class="ui input">
-              <input name="reviewers" v-model="reviewers" placeholder="Ревьюеры" type="text">
+              <input name="reviewers" v-model="reviewers" placeholder="Логины ревьюеров (через запятую)" type="text">
             </div>
           </div>
           <div class="field">

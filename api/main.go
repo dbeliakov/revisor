@@ -5,15 +5,14 @@ import (
 	"os"
 	"reviewer/api/auth"
 	"reviewer/api/comments"
+	"reviewer/api/config"
 	"reviewer/api/revisions"
 
 	gh "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
-func newRouter(base string) *mux.Router {
-	r := mux.NewRouter()
-
+func addAPIHandlers(base string, r *mux.Router) {
 	// Auth handlers
 	r.HandleFunc(base+"/auth/login", auth.LoginHandler).Methods("POST")
 	r.HandleFunc(base+"/auth/signup", auth.SignUpHandler).Methods("POST")
@@ -31,21 +30,26 @@ func newRouter(base string) *mux.Router {
 
 	// Comments handlers
 	r.HandleFunc(base+"/comments/add", comments.AddComment).Methods("POST")
+}
 
-	return r
+func addClientFilesHandlers(r *mux.Router) {
+	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./client")))
 }
 
 func main() {
-	r := newRouter("/api")
+	r := mux.NewRouter()
+	addAPIHandlers("/api", r)
+	addClientFilesHandlers(r)
 
-	// DEBUG
-	corsRouter := gh.CORS(
-		gh.AllowedOrigins([]string{"*"}),
-		gh.AllowedMethods([]string{"GET", "POST", "OPTIONS"}),
-		gh.AllowedHeaders([]string{"Content-Type", "Authorization"}),
-		gh.ExposedHeaders([]string{"Authorization"}),
-	)(r)
-
-	// TODO logging to file
-	http.ListenAndServe(":8090", gh.LoggingHandler(os.Stdout, corsRouter))
+	if config.Debug {
+		corsRouter := gh.CORS(
+			gh.AllowedOrigins([]string{"*"}),
+			gh.AllowedMethods([]string{"GET", "POST", "OPTIONS"}),
+			gh.AllowedHeaders([]string{"Content-Type", "Authorization"}),
+			gh.ExposedHeaders([]string{"Authorization"}),
+		)(r)
+		http.ListenAndServe(":8090", gh.LoggingHandler(os.Stdout, corsRouter))
+	} else {
+		http.ListenAndServe(":80", gh.LoggingHandler(os.Stdout, r))
+	}
 }

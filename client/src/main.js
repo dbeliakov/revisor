@@ -9,7 +9,8 @@ import VueAxios from 'vue-axios'
 
 Vue.config.productionTip = false
 Vue.use(VueAxios, axios)
-Vue.axios.defaults.baseURL = 'http://localhost:8090/api/'
+Vue.axios.defaults.baseURL = 'https://revisor.dbeliakov.ru/api/'
+// Vue.axios.defaults.baseURL = 'http://localhost:8090/api/'
 Vue.router = router
 
 Vue.use(require('@websanova/vue-auth'), {
