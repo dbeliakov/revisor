@@ -1,12 +1,13 @@
 package auth
 
 import (
-	"errors"
 	"log"
 	"net/http"
 	"reviewer/api/auth/database"
 	"reviewer/api/auth/middlewares"
 	"reviewer/api/utils"
+
+	"github.com/sirupsen/logrus"
 )
 
 // LoginHandler checks username and password and returns jwt on success
@@ -71,16 +72,10 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 
 // UserInfoHandler returns info about user
 var UserInfoHandler = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
-	id := r.Context().Value("user_id")
-	if id == nil {
-		log.Panic(errors.New("Assert: no user_id in context"))
-		return
-	}
-
-	user, err := database.UserByID(id.(string))
+	user, err := middlewares.UserFromRequest(r)
 	if err != nil {
-		utils.Error(w, http.StatusUnauthorized, "Incorrect user id")
-		return
+		logrus.Error("Error while getting user from request context: %+v", err)
+		utils.Error(w, http.StatusInternalServerError, "No authorized user for this request")
 	}
 
 	utils.Ok(w, user)
@@ -88,10 +83,10 @@ var UserInfoHandler = middlewares.AuthRequired(func(w http.ResponseWriter, r *ht
 
 // ChangePasswordHandler changes user password
 var ChangePasswordHandler = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
-	id := r.Context().Value("user_id")
-	if id == nil {
-		log.Panic(errors.New("Assert: no user_id in context"))
-		return
+	user, err := middlewares.UserFromRequest(r)
+	if err != nil {
+		logrus.Error("Error while getting user from request context: %+v", err)
+		utils.Error(w, http.StatusInternalServerError, "No authorized user for this request")
 	}
 
 	var form struct {
@@ -99,12 +94,6 @@ var ChangePasswordHandler = middlewares.AuthRequired(func(w http.ResponseWriter,
 		NewPassword string `json:"new_password" validate:"required,min=6"`
 	}
 	if err := utils.UnmarshalForm(w, r, &form); err != nil {
-		return
-	}
-
-	user, err := database.UserByID(id.(string))
-	if err != nil {
-		utils.Error(w, http.StatusUnauthorized, "Incorrect user id")
 		return
 	}
 

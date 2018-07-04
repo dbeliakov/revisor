@@ -1,20 +1,20 @@
 package comments
 
 import (
-	"errors"
-	"log"
 	"net/http"
 	"reviewer/api/auth/middlewares"
 	"reviewer/api/comments/database"
 	"reviewer/api/utils"
+
+	"github.com/sirupsen/logrus"
 )
 
 // AddComment to line of review
 var AddComment = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
-	id := r.Context().Value("user_id")
-	if id == nil {
-		log.Panic(errors.New("Assert: no user_id in context"))
-		return
+	user, err := middlewares.UserFromRequest(r)
+	if err != nil {
+		logrus.Error("Error while getting user from request context: %+v", err)
+		utils.Error(w, http.StatusInternalServerError, "No authorized user for this request")
 	}
 
 	var form struct {
@@ -37,8 +37,8 @@ var AddComment = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Re
 		parent = &p
 	}
 
-	comment := database.NewComment(id.(string), form.Text, form.ReviewID, form.LineID, parent == nil)
-	err := comment.Save()
+	comment := database.NewComment(user.ID.Hex(), form.Text, form.ReviewID, form.LineID, parent == nil)
+	err = comment.Save()
 	if err != nil {
 		utils.Error(w, http.StatusInternalServerError, "Cannot save comment to database")
 		return

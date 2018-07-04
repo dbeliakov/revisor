@@ -3,7 +3,6 @@ package revisions
 import (
 	"encoding/base64"
 	"errors"
-	"log"
 	"net/http"
 	auth "reviewer/api/auth/database"
 	"reviewer/api/auth/middlewares"
@@ -16,6 +15,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pmezard/go-difflib/difflib"
+	"github.com/sirupsen/logrus"
 
 	"github.com/globalsign/mgo/bson"
 )
@@ -56,13 +56,13 @@ func hasAccess(id string, review database.Review) bool {
 
 // OutgoingReviews returns reviews
 var OutgoingReviews = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
-	id := r.Context().Value("user_id")
-	if id == nil {
-		log.Panic(errors.New("Assert: no user_id in context"))
-		return
+	user, err := middlewares.UserFromRequest(r)
+	if err != nil {
+		logrus.Error("Error while getting user from request context: %+v", err)
+		utils.Error(w, http.StatusInternalServerError, "No authorized user for this request")
 	}
 
-	reviews, err := database.ReviewsByConditions(bson.M{"ownerid": bson.ObjectIdHex(id.(string))})
+	reviews, err := database.ReviewsByConditions(bson.M{"ownerid": bson.ObjectIdHex(user.ID.Hex())})
 	if err != nil {
 		utils.Error(w, http.StatusInternalServerError, "Cannot load outgoing reviews")
 		return
@@ -72,13 +72,13 @@ var OutgoingReviews = middlewares.AuthRequired(func(w http.ResponseWriter, r *ht
 
 // IncomingReviews return reviews
 var IncomingReviews = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
-	id := r.Context().Value("user_id")
-	if id == nil {
-		log.Panic(errors.New("Assert: no user_id in context"))
-		return
+	user, err := middlewares.UserFromRequest(r)
+	if err != nil {
+		logrus.Error("Error while getting user from request context: %+v", err)
+		utils.Error(w, http.StatusInternalServerError, "No authorized user for this request")
 	}
 
-	reviews, err := database.ReviewsByConditions(bson.M{"reviewersid": bson.ObjectIdHex(id.(string))})
+	reviews, err := database.ReviewsByConditions(bson.M{"reviewersid": bson.ObjectIdHex(user.ID.Hex())})
 	if err != nil {
 		utils.Error(w, http.StatusInternalServerError, "Cannot load outgoing reviews")
 		return
@@ -88,10 +88,10 @@ var IncomingReviews = middlewares.AuthRequired(func(w http.ResponseWriter, r *ht
 
 // NewReview creates new review
 var NewReview = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
-	id := r.Context().Value("user_id")
-	if id == nil {
-		log.Panic(errors.New("Assert: no user_id in context"))
-		return
+	user, err := middlewares.UserFromRequest(r)
+	if err != nil {
+		logrus.Error("Error while getting user from request context: %+v", err)
+		utils.Error(w, http.StatusInternalServerError, "No authorized user for this request")
 	}
 
 	var form struct {
@@ -106,7 +106,7 @@ var NewReview = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Req
 
 	fileContent, err := base64.StdEncoding.DecodeString(form.FileContent)
 	if err != nil {
-		utils.Error(w, http.StatusBadRequest, "Incorrect base64 file content")
+		utils.Error(w, http.StatusBadRequest, "Incorrect base64 file content: "+form.FileContent)
 		return
 	}
 
@@ -119,7 +119,7 @@ var NewReview = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Req
 	review := database.NewReview(
 		form.FileName,
 		difflib.SplitLines(string(fileContent)),
-		form.Name, id.(string),
+		form.Name, user.ID.Hex(),
 		reviewers)
 
 	err = review.Save()
@@ -130,10 +130,10 @@ var NewReview = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Req
 
 // Review returns information about review
 var Review = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
-	id := r.Context().Value("user_id")
-	if id == nil {
-		log.Panic(errors.New("Assert: no user_id in context"))
-		return
+	user, err := middlewares.UserFromRequest(r)
+	if err != nil {
+		logrus.Error("Error while getting user from request context: %+v", err)
+		utils.Error(w, http.StatusInternalServerError, "No authorized user for this request")
 	}
 
 	vars := mux.Vars(r)
@@ -163,7 +163,7 @@ var Review = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if !hasAccess(id.(string), review) {
+	if !hasAccess(user.ID.Hex(), review) {
 		utils.Error(w, http.StatusForbidden, "No access to this review")
 		return
 	}
@@ -189,10 +189,10 @@ var Review = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Reques
 
 // UpdateReview information or add revision
 var UpdateReview = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
-	id := r.Context().Value("user_id")
-	if id == nil {
-		log.Panic(errors.New("Assert: no user_id in context"))
-		return
+	user, err := middlewares.UserFromRequest(r)
+	if err != nil {
+		logrus.Error("Error while getting user from request context: %+v", err)
+		utils.Error(w, http.StatusInternalServerError, "No authorized user for this request")
 	}
 
 	vars := mux.Vars(r)
@@ -202,7 +202,7 @@ var UpdateReview = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.
 		utils.Error(w, http.StatusNotFound, "No review with id: "+reviewID)
 		return
 	}
-	if review.OwnerID.Hex() != id {
+	if review.OwnerID.Hex() != user.ID.Hex() {
 		utils.Error(w, http.StatusForbidden, "Only owner allowed")
 		return
 	}
@@ -248,10 +248,10 @@ var UpdateReview = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.
 
 // Decline review
 var Decline = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
-	id := r.Context().Value("user_id")
-	if id == nil {
-		log.Panic(errors.New("Assert: no user_id in context"))
-		return
+	user, err := middlewares.UserFromRequest(r)
+	if err != nil {
+		logrus.Error("Error while getting user from request context: %+v", err)
+		utils.Error(w, http.StatusInternalServerError, "No authorized user for this request")
 	}
 
 	vars := mux.Vars(r)
@@ -261,7 +261,7 @@ var Decline = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Reque
 		utils.Error(w, http.StatusNotFound, "No review with id: "+reviewID)
 		return
 	}
-	if !hasAccess(id.(string), review) {
+	if !hasAccess(user.ID.Hex(), review) {
 		utils.Error(w, http.StatusForbidden, "No access to this review")
 		return
 	}
@@ -278,10 +278,10 @@ var Decline = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Reque
 
 // Accept review
 var Accept = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
-	id := r.Context().Value("user_id")
-	if id == nil {
-		log.Panic(errors.New("Assert: no user_id in context"))
-		return
+	user, err := middlewares.UserFromRequest(r)
+	if err != nil {
+		logrus.Error("Error while getting user from request context: %+v", err)
+		utils.Error(w, http.StatusInternalServerError, "No authorized user for this request")
 	}
 
 	vars := mux.Vars(r)
@@ -291,7 +291,7 @@ var Accept = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Reques
 		utils.Error(w, http.StatusNotFound, "No review with id: "+reviewID)
 		return
 	}
-	if review.OwnerID.Hex() == id || !hasAccess(id.(string), review) {
+	if review.OwnerID.Hex() == user.ID.Hex() || !hasAccess(user.ID.Hex(), review) {
 		utils.Error(w, http.StatusForbidden, "No access to this review")
 		return
 	}

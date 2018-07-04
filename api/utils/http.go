@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/sirupsen/logrus"
+
 	validator "gopkg.in/go-playground/validator.v9"
 )
 
@@ -14,9 +16,10 @@ import (
 func Unauthorized(w http.ResponseWriter) {
 	bytes, err := json.Marshal(&map[string]string{
 		"status":  strconv.Itoa(http.StatusUnauthorized),
-		"message": "Invalid authorization token",
+		"message": "Unauthorized",
 	})
 	if err != nil {
+		logrus.Errorf("Cannot create json for unauthorized message: %+v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Internal Server Error"))
 		return
@@ -33,6 +36,7 @@ func Error(w http.ResponseWriter, code int, message string) {
 		"message": message,
 	})
 	if err != nil {
+		logrus.Errorf("Cannot create json for unauthorized message: %+v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Internal Server Error"))
 		return
@@ -52,6 +56,7 @@ func Ok(w http.ResponseWriter, data interface{}) {
 	}
 	bytes, err := json.Marshal(&result)
 	if err != nil {
+		logrus.Errorf("Cannot create json for unauthorized message: %+v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Internal Server Error"))
 		return
@@ -68,23 +73,30 @@ var (
 	ErrIncorectFormFields = errors.New("Incorrect form fields")
 )
 
-// UnmarshalForm from body and validate it
+// UnmarshalForm from body and validate it. If error occurs, writes error message to response writer
 func UnmarshalForm(w http.ResponseWriter, r *http.Request, to interface{}) error {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		Error(w, http.StatusBadRequest, "Incorrect body")
+		logrus.Errorf("Cannot read request body: %+v", err)
+		Error(w, http.StatusBadRequest, "Cannot read request body")
 		return ErrIncorrectBody
 	}
 	err = json.Unmarshal(body, to)
 	if err != nil {
-		Error(w, http.StatusNotAcceptable, "Incorrect form fields")
+		logrus.WithField(
+			"request_body", string(body),
+		).Errorf("Cannot unmarshal request body: %+v", err)
+		Error(w, http.StatusNotAcceptable, "Cannot unmarshal request body")
 		return ErrIncorrectBody
 	}
 
 	validate := validator.New()
 	err = validate.Struct(to)
 	if err != nil {
-		Error(w, http.StatusNotAcceptable, "Incorrect form fields")
+		logrus.WithField(
+			"request_body", string(body),
+		).Errorf("Invalid request body: %+v", err)
+		Error(w, http.StatusNotAcceptable, "Invalid request body")
 		return ErrIncorrectBody
 	}
 	return nil
