@@ -1,10 +1,13 @@
 package database
 
 import (
+	"errors"
 	"log"
 	"reviewer/api/auth/lib"
 	"reviewer/api/config"
 	. "reviewer/api/database"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/globalsign/mgo"
 	"github.com/globalsign/mgo/bson"
@@ -14,31 +17,35 @@ const (
 	userCollectionName = "users"
 )
 
+// Make 'login' field unique in database
 func init() {
 	s := Session.Copy()
 	defer s.Close()
 
+	loginField := "user.login"
+
 	c := collection(s)
 	indexes, err := c.Indexes()
 	if err != nil {
+		logrus.Warnf("Cannot get indexes: $+v. It's a new database?", err)
 		log.Print("Error while getting indexes: ", err)
 		indexes = []mgo.Index{}
 	}
 	for _, index := range indexes {
 		for _, key := range index.Key {
-			if key == "user.login" {
+			if key == loginField {
 				return
 			}
 		}
 	}
 
 	index := mgo.Index{
-		Key:    []string{"user.login"},
+		Key:    []string{loginField},
 		Unique: true,
 	}
 	err = c.EnsureIndex(index)
 	if err != nil {
-		panic(err)
+		logrus.Fatalf("Error while creating index for 'login' field: %+v", err)
 	}
 }
 
@@ -79,6 +86,9 @@ func UserByLogin(login string) (User, error) {
 
 // UserByID finds user in db by id
 func UserByID(id string) (User, error) {
+	if !bson.IsObjectIdHex(id) {
+		return User{}, errors.New("Invalid bson ObjectId string")
+	}
 	s := Session.Copy()
 	defer s.Close()
 

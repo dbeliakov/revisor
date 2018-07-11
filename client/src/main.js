@@ -9,8 +9,8 @@ import VueAxios from 'vue-axios'
 
 Vue.config.productionTip = false
 Vue.use(VueAxios, axios)
-Vue.axios.defaults.baseURL = 'https://revisor.dbeliakov.ru/api/'
-// Vue.axios.defaults.baseURL = 'http://localhost:8090/api/'
+// Vue.axios.defaults.baseURL = 'https://revisor.dbeliakov.ru/api/'
+Vue.axios.defaults.baseURL = 'http://localhost:8090/api/'
 Vue.router = router
 
 Vue.use(require('@websanova/vue-auth'), {
@@ -28,8 +28,8 @@ Vue.axios.interceptors.response.use(
       Vue.auth.logout({
         redirect: {name: 'Login'}
       })
-    } else if (error.response.status === 500) {
-      Vue.router.push({name: '500'})
+    } else if (error.response.status === 404) {
+      Vue.router.push({name: 'NotFound'})
     }
     return Promise.reject(error)
   })

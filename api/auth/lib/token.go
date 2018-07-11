@@ -3,13 +3,14 @@ package lib
 import (
 	"errors"
 	"fmt"
+	"reviewer/api/config"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 )
 
-const (
-	signingKey = "test_signing_key"
+var (
+	signingKey = []byte(config.SecretKey)
 )
 
 // NewToken generates new JWT token
@@ -21,7 +22,7 @@ func (user *User) NewToken(id string) (string, error) {
 		"login":      user.Login,
 		"exp":        time.Now().Add(time.Hour * 48).Unix(),
 	})
-	tokenString, err := token.SignedString([]byte(signingKey))
+	tokenString, err := token.SignedString(signingKey)
 	if err != nil {
 		return "", err
 	}
@@ -35,7 +36,7 @@ func ValidateToken(tokenString string) (jwt.MapClaims, error) {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return []byte(signingKey), nil
+		return signingKey, nil
 	})
 	if err != nil {
 		return jwt.MapClaims{}, err

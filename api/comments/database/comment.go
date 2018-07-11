@@ -2,6 +2,7 @@ package database
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
 
 	auth "reviewer/api/auth/database"
@@ -110,7 +111,7 @@ func (comment Comment) MarshalJSON() ([]byte, error) {
 	})
 }
 
-// RootCommentsForReview returns comments without
+// RootCommentsForReview returns comments without child comments
 func RootCommentsForReview(reviewID string) ([]Comment, error) {
 	s := Session.Copy()
 	defer s.Close()
@@ -126,6 +127,9 @@ func RootCommentsForReview(reviewID string) ([]Comment, error) {
 
 // CommentByID find comment by id
 func CommentByID(id string) (Comment, error) {
+	if !bson.IsObjectIdHex(id) {
+		return Comment{}, errors.New("Invalid bson ObjectId string")
+	}
 	s := Session.Copy()
 	defer s.Close()
 

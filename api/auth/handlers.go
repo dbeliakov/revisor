@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"log"
 	"net/http"
 	"reviewer/api/auth/database"
 	"reviewer/api/auth/middlewares"
@@ -22,19 +21,30 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	user, err := database.UserByLogin(form.Username)
 	if err != nil {
-		utils.Error(w, http.StatusNotAcceptable, "Incorrect username field")
+		logrus.Infof("Cannot find user with such login: %s, error: %+v", form.Username, err)
+		utils.Error(w, utils.JSONErrorResponse{
+			Status:        http.StatusNotAcceptable,
+			Message:       "Incorrect username field",
+			ClientMessage: "Пользователь с таким логином не найден",
+		})
 		return
 	}
 	if user.CheckPassword(form.Password) {
 		token, err := user.NewToken(user.ID.Hex())
 		if err != nil {
-			utils.Error(w, http.StatusInternalServerError, "Server error")
+			logrus.Errorf("Cannot create new token for user: %s, error: %+v", form.Username, err)
+			utils.Error(w, utils.InternalErrorResponse("Cannot generate token"))
 			return
 		}
 		w.Header().Add("Authorization", "Bearer "+token)
 		utils.Ok(w, nil)
 	} else {
-		utils.Error(w, http.StatusNotAcceptable, "Incorrect password field")
+		logrus.Infof("Invalid password for user: %s", form.Username)
+		utils.Error(w, utils.JSONErrorResponse{
+			Status:        http.StatusNotAcceptable,
+			Message:       "Incorrect password",
+			ClientMessage: "Неправильный пароль",
+		})
 	}
 }
 
@@ -51,20 +61,25 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !database.LoginIsFree(form.Username) { // TODO should be in one transaction with creation
-		utils.Error(w, http.StatusConflict, "Username is not free")
+		logrus.Infof("Login is not free: %s", form.Username)
+		utils.Error(w, utils.JSONErrorResponse{
+			Status:        http.StatusConflict,
+			Message:       "Username is not free",
+			ClientMessage: "Пользователь с таким логином уже зарегистрирован",
+		})
 		return
 	}
 
 	user, err := database.NewUser(form.FirstName, form.LastName, form.Username, form.Password)
 	if err != nil {
-		log.Print("Cannot create new user: ", err)
-		utils.Error(w, http.StatusInternalServerError, "Cannot create new user")
+		logrus.Warnf("Cannot create new user: %+v", err)
+		utils.Error(w, utils.InternalErrorResponse("Cannot create new user"))
 		return
 	}
 	err = user.Save()
 	if err != nil {
-		log.Print("Cannot create new user: ", err)
-		utils.Error(w, http.StatusInternalServerError, "Cannot create new user")
+		logrus.Warnf("Cannot save new user to database: %+v", err)
+		utils.Error(w, utils.InternalErrorResponse("Cannot create new user"))
 		return
 	}
 	utils.Ok(w, nil)
@@ -75,7 +90,7 @@ var UserInfoHandler = middlewares.AuthRequired(func(w http.ResponseWriter, r *ht
 	user, err := middlewares.UserFromRequest(r)
 	if err != nil {
 		logrus.Error("Error while getting user from request context: %+v", err)
-		utils.Error(w, http.StatusInternalServerError, "No authorized user for this request")
+		utils.Error(w, utils.InternalErrorResponse("No authorized user for this request"))
 	}
 
 	utils.Ok(w, user)
@@ -86,7 +101,7 @@ var ChangePasswordHandler = middlewares.AuthRequired(func(w http.ResponseWriter,
 	user, err := middlewares.UserFromRequest(r)
 	if err != nil {
 		logrus.Error("Error while getting user from request context: %+v", err)
-		utils.Error(w, http.StatusInternalServerError, "No authorized user for this request")
+		utils.Error(w, utils.InternalErrorResponse("No authorized user for this request"))
 	}
 
 	var form struct {
@@ -100,16 +115,23 @@ var ChangePasswordHandler = middlewares.AuthRequired(func(w http.ResponseWriter,
 	if user.CheckPassword(form.OldPassword) {
 		err := user.SetPassword(form.NewPassword)
 		if err != nil {
-			utils.Error(w, http.StatusInternalServerError, "Cannot store password")
+			logrus.Errorf("Cannot set new password for user: %s, error: %+v", user.Login, err)
+			utils.Error(w, utils.InternalErrorResponse("Cannot store password"))
 			return
 		}
 		err = user.Save()
 		if err != nil {
-			utils.Error(w, http.StatusInternalServerError, "Cannot store password")
+			logrus.Errorf("Cannot save new password for user: %s, error: %+v", user.Login, err)
+			utils.Error(w, utils.InternalErrorResponse("Cannot store password"))
 			return
 		}
 		utils.Ok(w, nil)
 	} else {
-		utils.Error(w, http.StatusNotAcceptable, "Incorrect current password")
+		logrus.Infof("Cannot change password for user %s: incorrect current password", user.Login)
+		utils.Error(w, utils.JSONErrorResponse{
+			Status:        http.StatusNotAcceptable,
+			Message:       "Incorrect current password",
+			ClientMessage: "Неправильный текущий пароль",
+		})
 	}
 })

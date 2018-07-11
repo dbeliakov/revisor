@@ -2,6 +2,7 @@ package database
 
 import (
 	"encoding/json"
+	"errors"
 	auth "reviewer/api/auth/database"
 	"reviewer/api/config"
 	. "reviewer/api/database"
@@ -105,6 +106,9 @@ func NewReview(filename string, content []string, name string, owner string, rev
 
 // ReviewByID from database
 func ReviewByID(id string) (Review, error) {
+	if !bson.IsObjectIdHex(id) {
+		return Review{}, errors.New("Invalid bson ObjectId string")
+	}
 	s := Session.Copy()
 	defer s.Close()
 

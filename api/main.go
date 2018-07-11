@@ -8,6 +8,8 @@ import (
 	"reviewer/api/config"
 	"reviewer/api/revisions"
 
+	"github.com/sirupsen/logrus"
+
 	gh "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
@@ -33,7 +35,7 @@ func addAPIHandlers(base string, r *mux.Router) {
 }
 
 func addClientFilesHandlers(r *mux.Router) {
-	r.PathPrefix("/").Handler(http.FileServer(http.Dir("./client")))
+	r.PathPrefix("/").Handler(http.FileServer(http.Dir(config.ClientFilesDir)))
 }
 
 func main() {
@@ -41,15 +43,20 @@ func main() {
 	addAPIHandlers("/api", r)
 	addClientFilesHandlers(r)
 
+	handler := gh.CombinedLoggingHandler(os.Stdout, r)
+	listenAddres := ":80"
+
 	if config.Debug {
-		corsRouter := gh.CORS(
+		handler = gh.CORS(
 			gh.AllowedOrigins([]string{"*"}),
 			gh.AllowedMethods([]string{"GET", "POST", "OPTIONS"}),
 			gh.AllowedHeaders([]string{"Content-Type", "Authorization"}),
 			gh.ExposedHeaders([]string{"Authorization"}),
-		)(r)
-		http.ListenAndServe(":8090", gh.LoggingHandler(os.Stdout, corsRouter))
-	} else {
-		http.ListenAndServe(":80", gh.LoggingHandler(os.Stdout, r))
+		)(handler)
+		listenAddres = "127.0.0.1:8090"
+	}
+	err := http.ListenAndServe(listenAddres, handler)
+	if err != nil {
+		logrus.Panicf("Error from http server: %+v", err)
 	}
 }

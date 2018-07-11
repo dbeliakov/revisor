@@ -5,18 +5,34 @@ import (
 	"errors"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 
 	"github.com/sirupsen/logrus"
 
 	validator "gopkg.in/go-playground/validator.v9"
 )
 
+// JSONErrorResponse presents general structure of error response
+type JSONErrorResponse struct {
+	Status        int    `json:"status"`
+	Message       string `json:"message"`
+	ClientMessage string `json:"client_message"`
+}
+
+// InternalErrorResponse template with custom message
+func InternalErrorResponse(message string) JSONErrorResponse {
+	return JSONErrorResponse{
+		Status:        http.StatusInternalServerError,
+		Message:       message,
+		ClientMessage: "Внутренняя ошибка сервера. Пожалуйста, попробуйте повторить позднее",
+	}
+}
+
 // Unauthorized writes unauthorized response
 func Unauthorized(w http.ResponseWriter) {
-	bytes, err := json.Marshal(&map[string]string{
-		"status":  strconv.Itoa(http.StatusUnauthorized),
-		"message": "Unauthorized",
+	bytes, err := json.Marshal(JSONErrorResponse{
+		Status:        http.StatusUnauthorized,
+		Message:       "Unauthorized",
+		ClientMessage: "Для продолжения работы необходимо авторизоваться",
 	})
 	if err != nil {
 		logrus.Errorf("Cannot create json for unauthorized message: %+v", err)
@@ -30,11 +46,8 @@ func Unauthorized(w http.ResponseWriter) {
 }
 
 // Error writes error response
-func Error(w http.ResponseWriter, code int, message string) {
-	bytes, err := json.Marshal(&map[string]string{
-		"status":  strconv.Itoa(code),
-		"message": message,
-	})
+func Error(w http.ResponseWriter, response JSONErrorResponse) {
+	bytes, err := json.Marshal(response)
 	if err != nil {
 		logrus.Errorf("Cannot create json for unauthorized message: %+v", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -42,14 +55,14 @@ func Error(w http.ResponseWriter, code int, message string) {
 		return
 	}
 
-	w.WriteHeader(code)
+	w.WriteHeader(response.Status)
 	w.Write(bytes)
 }
 
 // Ok writes error response
 func Ok(w http.ResponseWriter, data interface{}) {
 	result := map[string]interface{}{
-		"status": strconv.Itoa(http.StatusOK),
+		"status": http.StatusOK,
 	}
 	if data != nil {
 		result["data"] = data
@@ -78,25 +91,33 @@ func UnmarshalForm(w http.ResponseWriter, r *http.Request, to interface{}) error
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		logrus.Errorf("Cannot read request body: %+v", err)
-		Error(w, http.StatusBadRequest, "Cannot read request body")
+		Error(w, JSONErrorResponse{
+			Status:        http.StatusInternalServerError,
+			Message:       "Cannot read request body",
+			ClientMessage: "Внутренняя ошибка сервера. Пожалуйста, повторите позднее",
+		})
 		return ErrIncorrectBody
 	}
 	err = json.Unmarshal(body, to)
 	if err != nil {
-		logrus.WithField(
-			"request_body", string(body),
-		).Errorf("Cannot unmarshal request body: %+v", err)
-		Error(w, http.StatusNotAcceptable, "Cannot unmarshal request body")
+		logrus.Errorf("Cannot unmarshal request body: %+v", err)
+		Error(w, JSONErrorResponse{
+			Status:        http.StatusNotAcceptable,
+			Message:       "Cannot unmarshal request body",
+			ClientMessage: "Сервер получил некорректный запрос",
+		})
 		return ErrIncorrectBody
 	}
 
 	validate := validator.New()
 	err = validate.Struct(to)
 	if err != nil {
-		logrus.WithField(
-			"request_body", string(body),
-		).Errorf("Invalid request body: %+v", err)
-		Error(w, http.StatusNotAcceptable, "Invalid request body")
+		logrus.Errorf("Invalid request body: %+v", err)
+		Error(w, JSONErrorResponse{
+			Status:        http.StatusNotAcceptable,
+			Message:       "Invalid request",
+			ClientMessage: "Сервер получил некорректный запрос",
+		})
 		return ErrIncorrectBody
 	}
 	return nil

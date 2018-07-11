@@ -14,7 +14,7 @@ var AddComment = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Re
 	user, err := middlewares.UserFromRequest(r)
 	if err != nil {
 		logrus.Error("Error while getting user from request context: %+v", err)
-		utils.Error(w, http.StatusInternalServerError, "No authorized user for this request")
+		utils.Error(w, utils.InternalErrorResponse("No authorized user for this request"))
 	}
 
 	var form struct {
@@ -31,7 +31,12 @@ var AddComment = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Re
 	if form.Parent != "" {
 		p, err := database.CommentByID(form.Parent)
 		if err != nil {
-			utils.Error(w, http.StatusBadRequest, "Cannot find parent comment")
+			logrus.Warnf("Cannot find parent comment: %+v", err)
+			utils.Error(w, utils.JSONErrorResponse{
+				Status:        http.StatusBadRequest,
+				Message:       "Cannot find parent comment",
+				ClientMessage: "Сервер получил некорректный запрос",
+			})
 			return
 		}
 		parent = &p
@@ -40,7 +45,8 @@ var AddComment = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Re
 	comment := database.NewComment(user.ID.Hex(), form.Text, form.ReviewID, form.LineID, parent == nil)
 	err = comment.Save()
 	if err != nil {
-		utils.Error(w, http.StatusInternalServerError, "Cannot save comment to database")
+		logrus.Errorf("Cannot save new comment: %+v", err)
+		utils.Error(w, utils.InternalErrorResponse("Cannot save comment to database"))
 		return
 	}
 
@@ -49,7 +55,8 @@ var AddComment = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Re
 		err = parent.Save()
 	}
 	if err != nil {
-		utils.Error(w, http.StatusInternalServerError, "Cannot update parent comment")
+		logrus.Errorf("Cannot save parent comment: %+v", err)
+		utils.Error(w, utils.InternalErrorResponse("Cannot update parent comment"))
 		return
 	}
 

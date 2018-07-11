@@ -6,6 +6,7 @@ import SignUp from '@/components/SignUp'
 import Profile from '@/components/Profile'
 import NewReview from '@/components/NewReview'
 import Review from '@/components/Review'
+import NotFound from '@/components/pages/NotFound'
 
 Vue.use(Router)
 
@@ -72,6 +73,11 @@ export default new Router({
       meta: {
         auth: true
       }
+    },
+    {
+      path: '/404',
+      name: 'NotFound',
+      component: NotFound
     }
   ]
 })

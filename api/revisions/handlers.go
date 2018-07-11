@@ -59,12 +59,13 @@ var OutgoingReviews = middlewares.AuthRequired(func(w http.ResponseWriter, r *ht
 	user, err := middlewares.UserFromRequest(r)
 	if err != nil {
 		logrus.Error("Error while getting user from request context: %+v", err)
-		utils.Error(w, http.StatusInternalServerError, "No authorized user for this request")
+		utils.Error(w, utils.InternalErrorResponse("No authorized user for this request"))
 	}
 
 	reviews, err := database.ReviewsByConditions(bson.M{"ownerid": bson.ObjectIdHex(user.ID.Hex())})
 	if err != nil {
-		utils.Error(w, http.StatusInternalServerError, "Cannot load outgoing reviews")
+		logrus.Errorf("Cannot load outgoing reviews: %+v", err)
+		utils.Error(w, utils.InternalErrorResponse("Cannot load outgoing reviews"))
 		return
 	}
 	utils.Ok(w, reviews)
@@ -75,12 +76,13 @@ var IncomingReviews = middlewares.AuthRequired(func(w http.ResponseWriter, r *ht
 	user, err := middlewares.UserFromRequest(r)
 	if err != nil {
 		logrus.Error("Error while getting user from request context: %+v", err)
-		utils.Error(w, http.StatusInternalServerError, "No authorized user for this request")
+		utils.Error(w, utils.InternalErrorResponse("No authorized user for this request"))
 	}
 
 	reviews, err := database.ReviewsByConditions(bson.M{"reviewersid": bson.ObjectIdHex(user.ID.Hex())})
 	if err != nil {
-		utils.Error(w, http.StatusInternalServerError, "Cannot load outgoing reviews")
+		logrus.Errorf("Cannot load outgoing reviews: %+v", err)
+		utils.Error(w, utils.InternalErrorResponse("Cannot load incoming reviews"))
 		return
 	}
 	utils.Ok(w, reviews)
@@ -91,7 +93,7 @@ var NewReview = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Req
 	user, err := middlewares.UserFromRequest(r)
 	if err != nil {
 		logrus.Error("Error while getting user from request context: %+v", err)
-		utils.Error(w, http.StatusInternalServerError, "No authorized user for this request")
+		utils.Error(w, utils.InternalErrorResponse("No authorized user for this request"))
 	}
 
 	var form struct {
@@ -106,13 +108,23 @@ var NewReview = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Req
 
 	fileContent, err := base64.StdEncoding.DecodeString(form.FileContent)
 	if err != nil {
-		utils.Error(w, http.StatusBadRequest, "Incorrect base64 file content: "+form.FileContent)
+		logrus.Warnf("Incorrect base64 file content: %s, error: %+v", form.FileContent, err)
+		utils.Error(w, utils.JSONErrorResponse{
+			Status:        http.StatusBadRequest,
+			Message:       "Incorrect base64 file content",
+			ClientMessage: "Некорректная кодировка файла",
+		})
 		return
 	}
 
 	var reviewers []string
 	if reviewers, err = idsByLogins(strings.Split(form.Reviewers, ",")); err != nil {
-		utils.Error(w, http.StatusNotAcceptable, err.Error())
+		logrus.Infof("Incorrect list of reviewers: %+v", err)
+		utils.Error(w, utils.JSONErrorResponse{
+			Status:        http.StatusNotAcceptable,
+			Message:       "Incorrect list of reviewers",
+			ClientMessage: "Некорректный список ревьюеров",
+		})
 		return
 	}
 
@@ -124,7 +136,8 @@ var NewReview = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Req
 
 	err = review.Save()
 	if err != nil {
-		utils.Error(w, http.StatusInternalServerError, "Cannot save review")
+		logrus.Errorf("Cannot save new review: %+v", err)
+		utils.Error(w, utils.InternalErrorResponse("Cannot save review"))
 	}
 })
 
@@ -133,14 +146,19 @@ var Review = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Reques
 	user, err := middlewares.UserFromRequest(r)
 	if err != nil {
 		logrus.Error("Error while getting user from request context: %+v", err)
-		utils.Error(w, http.StatusInternalServerError, "No authorized user for this request")
+		utils.Error(w, utils.InternalErrorResponse("No authorized user for this request"))
 	}
 
 	vars := mux.Vars(r)
 	reviewID := vars["id"]
 	review, err := database.ReviewByID(reviewID)
 	if err != nil {
-		utils.Error(w, http.StatusNotFound, "No review with id: "+reviewID)
+		logrus.Warnf("Cannot find review with id: %+s, error: %+v", reviewID, err)
+		utils.Error(w, utils.JSONErrorResponse{
+			Status:        http.StatusNotFound,
+			Message:       "No review with id: " + reviewID,
+			ClientMessage: "Не удалось найти ревью",
+		})
 		return
 	}
 
@@ -154,29 +172,46 @@ var Review = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Reques
 
 	startRev, err := getParamOr("start_rev", 0)
 	if err != nil {
-		utils.Error(w, http.StatusBadRequest, "Incorrect start revision")
+		logrus.Warnf("Incorrect start revision: %+v", err)
+		utils.Error(w, utils.JSONErrorResponse{
+			Status:        http.StatusBadRequest,
+			Message:       "Incorrect start revision",
+			ClientMessage: "Некорректный номер начальной ревизии",
+		})
 		return
 	}
 	endRev, err := getParamOr("end_rev", review.File.RevisionsCount()-1)
 	if err != nil {
-		utils.Error(w, http.StatusBadRequest, "Incorrect end revision")
+		logrus.Warnf("Incorrect end revision: %+v", err)
+		utils.Error(w, utils.JSONErrorResponse{
+			Status:        http.StatusBadRequest,
+			Message:       "Incorrect end revision",
+			ClientMessage: "Некорректный номер конечной ревизии",
+		})
 		return
 	}
 
 	if !hasAccess(user.ID.Hex(), review) {
-		utils.Error(w, http.StatusForbidden, "No access to this review")
+		logrus.Warnf("User %s han no access to review %s", user.Login, review.ID.Hex())
+		utils.Error(w, utils.JSONErrorResponse{
+			Status:        http.StatusForbidden,
+			Message:       "No access to this review",
+			ClientMessage: "У вас недостаточно прав для просмотра ревью",
+		})
 		return
 	}
 
 	content, err := review.File.Diff(startRev, endRev)
 	if err != nil {
-		utils.Error(w, http.StatusInternalServerError, "Cannot calculate diff")
+		logrus.Errorf("Cannot calculate diff: %+v", err)
+		utils.Error(w, utils.InternalErrorResponse("Cannot calculate diff"))
 		return
 	}
 
 	comments, err := comments.RootCommentsForReview(review.ID.Hex())
 	if err != nil {
-		utils.Error(w, http.StatusInternalServerError, "Cannot calculate diff")
+		logrus.Errorf("Cannot load comments for review: %s, error: %+v", review.ID.Hex(), err)
+		utils.Error(w, utils.InternalErrorResponse("Cannot load comments"))
 		return
 	}
 
@@ -192,18 +227,28 @@ var UpdateReview = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.
 	user, err := middlewares.UserFromRequest(r)
 	if err != nil {
 		logrus.Error("Error while getting user from request context: %+v", err)
-		utils.Error(w, http.StatusInternalServerError, "No authorized user for this request")
+		utils.Error(w, utils.InternalErrorResponse("No authorized user for this request"))
 	}
 
 	vars := mux.Vars(r)
 	reviewID := vars["id"]
 	review, err := database.ReviewByID(reviewID)
 	if err != nil {
-		utils.Error(w, http.StatusNotFound, "No review with id: "+reviewID)
+		logrus.Warnf("Cannot find review: %s, error: %+v", reviewID, err)
+		utils.Error(w, utils.JSONErrorResponse{
+			Status:        http.StatusNotFound,
+			Message:       "No review with id: " + reviewID,
+			ClientMessage: "Не удалось найти ревью",
+		})
 		return
 	}
 	if review.OwnerID.Hex() != user.ID.Hex() {
-		utils.Error(w, http.StatusForbidden, "Only owner allowed")
+		logrus.Warnf("User %s tries to update review %s without being the creator", user.Login, review.ID.Hex())
+		utils.Error(w, utils.JSONErrorResponse{
+			Status:        http.StatusForbidden,
+			Message:       "Only owner allowed to update review",
+			ClientMessage: "Только автор ревью может его обновлять",
+		})
 		return
 	}
 
@@ -218,14 +263,24 @@ var UpdateReview = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.
 
 	fileContent, err := base64.StdEncoding.DecodeString(form.NewRevision)
 	if err != nil {
-		utils.Error(w, http.StatusBadRequest, "Incorrect base64 file content")
+		logrus.Warnf("Incorrect base64 file content: %s, error: %+v", form.NewRevision, err)
+		utils.Error(w, utils.JSONErrorResponse{
+			Status:        http.StatusBadRequest,
+			Message:       "Incorrect base64 file content",
+			ClientMessage: "Некорректная кодировка файла",
+		})
 		return
 	}
 	review.Name = form.Name
 
 	var reviewers []string
 	if reviewers, err = idsByLogins(strings.Split(form.Reviewers, ",")); err != nil {
-		utils.Error(w, http.StatusNotAcceptable, err.Error())
+		logrus.Warnf("Incorrect list of reviewers: %+v", err)
+		utils.Error(w, utils.JSONErrorResponse{
+			Status:        http.StatusNotAcceptable,
+			Message:       "Incorrect list of reviewers",
+			ClientMessage: "Некорректный список ревьюеров",
+		})
 		return
 	}
 	review.ReviewersID = stringsToBsonIDs(reviewers)
@@ -233,14 +288,16 @@ var UpdateReview = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.
 	if len(form.NewRevision) > 0 {
 		err = review.File.AddRevision(difflib.SplitLines(string(fileContent)))
 		if err != nil {
-			utils.Error(w, http.StatusInternalServerError, "Cannot add revision")
+			logrus.Errorf("Cannot add revision: %+v", err)
+			utils.Error(w, utils.InternalErrorResponse("Cannot add revision"))
 			return
 		}
 		review.Updated = time.Now()
 	}
 	err = review.Save()
 	if err != nil {
-		utils.Error(w, http.StatusInternalServerError, "Cannot update reiew")
+		logrus.Errorf("Cannot save updated review: %+v", err)
+		utils.Error(w, utils.InternalErrorResponse("Cannot update review"))
 		return
 	}
 	utils.Ok(w, nil)
@@ -251,18 +308,28 @@ var Decline = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Reque
 	user, err := middlewares.UserFromRequest(r)
 	if err != nil {
 		logrus.Error("Error while getting user from request context: %+v", err)
-		utils.Error(w, http.StatusInternalServerError, "No authorized user for this request")
+		utils.Error(w, utils.InternalErrorResponse("No authorized user for this request"))
 	}
 
 	vars := mux.Vars(r)
 	reviewID := vars["id"]
 	review, err := database.ReviewByID(reviewID)
 	if err != nil {
-		utils.Error(w, http.StatusNotFound, "No review with id: "+reviewID)
+		logrus.Warnf("Cannot find review: %s, error: %+v", reviewID, err)
+		utils.Error(w, utils.JSONErrorResponse{
+			Status:        http.StatusNotFound,
+			Message:       "No review with id: " + reviewID,
+			ClientMessage: "Не удалось найти ревью",
+		})
 		return
 	}
 	if !hasAccess(user.ID.Hex(), review) {
-		utils.Error(w, http.StatusForbidden, "No access to this review")
+		logrus.Warnf("User %s has no access to review %s", user.Login, review.ID.Hex())
+		utils.Error(w, utils.JSONErrorResponse{
+			Status:        http.StatusForbidden,
+			Message:       "No access to this review",
+			ClientMessage: "У вас недостаточно прав для закрытия ревью",
+		})
 		return
 	}
 
@@ -271,7 +338,8 @@ var Decline = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Reque
 	review.Updated = time.Now()
 	err = review.Save()
 	if err != nil {
-		utils.Error(w, http.StatusInternalServerError, "Cannot update reiew")
+		logrus.Errorf("Cannot save review: %+v", err)
+		utils.Error(w, utils.InternalErrorResponse("Cannot update review"))
 		return
 	}
 })
@@ -281,18 +349,28 @@ var Accept = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Reques
 	user, err := middlewares.UserFromRequest(r)
 	if err != nil {
 		logrus.Error("Error while getting user from request context: %+v", err)
-		utils.Error(w, http.StatusInternalServerError, "No authorized user for this request")
+		utils.Error(w, utils.InternalErrorResponse("No authorized user for this request"))
 	}
 
 	vars := mux.Vars(r)
 	reviewID := vars["id"]
 	review, err := database.ReviewByID(reviewID)
 	if err != nil {
-		utils.Error(w, http.StatusNotFound, "No review with id: "+reviewID)
+		logrus.Warnf("Cannot find review: %s, error: %+v", reviewID, err)
+		utils.Error(w, utils.JSONErrorResponse{
+			Status:        http.StatusNotFound,
+			Message:       "No review with id: " + reviewID,
+			ClientMessage: "Не удалось найти ревью",
+		})
 		return
 	}
 	if review.OwnerID.Hex() == user.ID.Hex() || !hasAccess(user.ID.Hex(), review) {
-		utils.Error(w, http.StatusForbidden, "No access to this review")
+		logrus.Warnf("User %s has no access to review %s", user.Login, review.ID.Hex())
+		utils.Error(w, utils.JSONErrorResponse{
+			Status:        http.StatusForbidden,
+			Message:       "No access to this review",
+			ClientMessage: "У вас недостаточно прав для закрытия ревью",
+		})
 		return
 	}
 
@@ -301,7 +379,8 @@ var Accept = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Reques
 	review.Updated = time.Now()
 	err = review.Save()
 	if err != nil {
-		utils.Error(w, http.StatusInternalServerError, "Cannot update reiew")
+		logrus.Errorf("Cannot save review: %+v", err)
+		utils.Error(w, utils.InternalErrorResponse("Cannot update review"))
 		return
 	}
 })
