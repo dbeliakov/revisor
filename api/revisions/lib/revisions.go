@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/pmezard/go-difflib/difflib"
 	uuid "github.com/satori/go.uuid"
 )
@@ -89,7 +91,7 @@ func NewVersionedFile(name string, content []string) VersionedFile {
 	for _, line := range content {
 		u, err := uuid.NewV4()
 		if err != nil {
-			panic(errors.New("Assert: " + err.Error()))
+			logrus.Panicf("Cannot create uuid for line: %+v", err)
 		}
 		file.Original.Lines = append(file.Original.Lines, Line{Content: line, Revision: 0, ID: u.String()})
 	}
@@ -168,7 +170,7 @@ func (file *VersionedFile) AddRevision(content []string) error {
 				for j := c.J1; j < c.J2; j++ {
 					u, err := uuid.NewV4()
 					if err != nil {
-						panic(errors.New("Assert: " + err.Error()))
+						logrus.Panicf("Cannot create uuid: %+v", err)
 					}
 					patch.Modifications = append(patch.Modifications, Modification{
 						Type:       insertModification,

@@ -1,9 +1,10 @@
 package database
 
 import (
-	"log"
 	"reviewer/api/config"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/globalsign/mgo"
 )
@@ -16,12 +17,12 @@ var (
 func init() {
 	mongoDBDialInfo := &mgo.DialInfo{
 		Addrs:    []string{config.MongoAddr},
-		Timeout:  60 * time.Second,
+		Timeout:  10 * time.Second,
 		Database: config.MongoDatabase,
 	}
 	var err error
 	Session, err = mgo.DialWithInfo(mongoDBDialInfo)
 	if err != nil {
-		log.Panic(err)
+		logrus.Panic("Cannot connect to database: %+v", err)
 	}
 }
