@@ -1,7 +1,5 @@
 <template>
     <div id="login">
-        <Header></Header>
-
         <div class="column">
             <form class="ui large form" v-on:submit.prevent="login()">
                 <div class="ui">
@@ -17,7 +15,7 @@
                     <input name="password" v-model="password" placeholder="Пароль" type="password">
                     </div>
                 </div>
-                <button class="ui fluid large blue submit button" type="submit">Войти</button>
+                <button class="ui fluid large blue submit button" v-bind:class="{'disabled': formDisabled}" type="submit">Войти</button>
                 </div>
 
                 <div class="ui negative message" v-if="error.length > 0">{{ error }}</div>
@@ -39,36 +37,41 @@ export default {
     return {
       username: '',
       password: '',
-      error: ''
+      error: '',
+      formDisabled: false
     }
   },
   methods: {
     login () {
+      if (this.formDisabled) {
+        return
+      }
+      this.formDisabled = true
       if (this.username.length === 0) {
         this.error = 'Логин обязателен'
+        this.formDisabled = false
         return
       }
       if (this.password.length === 0) {
         this.error = 'Пароль обязателен'
+        this.formDisabled = false
         return
       }
 
       this.$auth.login({
         data: {username: this.username, password: this.password}
-      }).then(() => {
-        console.log('success')
-        console.log(this.$auth)
       }).catch((err) => {
-        console.log(err)
         if (!err.response.status) {
           this.error = 'Ошибка сети'
-        } else if (err.response.status === 406) {
-          this.error = 'Неверный логин и/или пароль'
-        } else if (err.response.status === 400) {
-          this.error = 'Некорректный логин и/или пароль'
-        } else {
-          this.error = 'Неизвестная ошибка'
+          this.formDisabled = false
+          return
         }
+        if (err.response.data.client_message) {
+          this.error = err.response.data.client_message
+        } else {
+          this.error = 'Внутренняя ошибка сервиса'
+        }
+        this.formDisabled = false
       })
     }
   }

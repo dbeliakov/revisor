@@ -2,12 +2,15 @@ package auth
 
 import (
 	"net/http"
+	"regexp"
 	"reviewer/api/auth/database"
 	"reviewer/api/auth/middlewares"
 	"reviewer/api/utils"
 
 	"github.com/sirupsen/logrus"
 )
+
+var checkLogin = regexp.MustCompile(`^[a-zA-Z0-9\-_]+$`).MatchString
 
 // LoginHandler checks username and password and returns jwt on success
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
@@ -57,6 +60,16 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 		Password  string `json:"password" validate:"required,min=6"`
 	}
 	if err := utils.UnmarshalForm(w, r, &form); err != nil {
+		return
+	}
+
+	if !checkLogin(form.Username) {
+		logrus.Infof("Incorrect login: %s", form.Username)
+		utils.Error(w, utils.JSONErrorResponse{
+			Status:        http.StatusConflict,
+			Message:       "Incorrect login",
+			ClientMessage: "В логине могут быть только латинские символы, цифры и знаки '-' и '_'",
+		})
 		return
 	}
 

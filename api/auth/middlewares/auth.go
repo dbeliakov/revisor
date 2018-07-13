@@ -36,6 +36,11 @@ func AuthRequired(h http.HandlerFunc) http.HandlerFunc {
 			utils.Unauthorized(w)
 			return
 		}
+		// TODO add auto updating of token
+		// Update user token if it become invalid in 1 days
+		/*if claims.VerifyExpiresAt(time.Now().Add(time.Hour*5*24).Unix(), false) {
+
+		}*/
 		h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), keyUserID, claims["id"])))
 	}
 }
