@@ -20,7 +20,7 @@ func (user *User) NewToken(id string) (string, error) {
 		"first_name": user.FirstName,
 		"last_name":  user.LastName,
 		"login":      user.Login,
-		"exp":        time.Now().Add(time.Hour * 48).Unix(),
+		"exp":        time.Now().Add(time.Hour * 24 * 7).Unix(),
 	})
 	tokenString, err := token.SignedString(signingKey)
 	if err != nil {

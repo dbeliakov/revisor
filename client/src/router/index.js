@@ -1,10 +1,10 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import Reviews from '@/components/Reviews'
-import Login from '@/components/Login'
-import SignUp from '@/components/SignUp'
+import Login from '@/components/pages/Login'
+import SignUp from '@/components/pages/SignUp'
 import Profile from '@/components/Profile'
-import NewReview from '@/components/NewReview'
+import NewReview from '@/components/pages/NewReview'
 import Review from '@/components/Review'
 import NotFound from '@/components/pages/NotFound'
 

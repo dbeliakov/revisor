@@ -23,7 +23,7 @@
                     <input name="password" v-model="password" placeholder="Пароль" type="password">
                     </div>
                 </div>
-                <button class="ui fluid large blue submit button" type="submit">Зарегистрироваться</button>
+                <button class="ui fluid large blue submit button" v-bind:class="{'disabled': formDisabled}" type="submit">Зарегистрироваться</button>
                 </div>
 
                 <div class="ui negative message" v-if="error.length > 0">{{ error }}</div>
@@ -47,25 +47,34 @@ export default {
       last_name: '',
       username: '',
       password: '',
-      error: ''
+      error: '',
+      formDisabled: false
     }
   },
   methods: {
     signUp () {
+      if (this.formDisabled) {
+        return
+      }
+      this.formDisabled = true
       if (this.first_name.length === 0) {
         this.error = 'Имя обязательно'
+        this.formDisabled = false
         return
       }
       if (this.last_name.length === 0) {
+        this.formDisabled = false
         this.error = 'Фамилия обязательна'
         return
       }
       if (this.username.length === 0) {
         this.error = 'Логин обязателен'
+        this.formDisabled = false
         return
       }
       if (this.password.length < 6) {
-        this.error = 'Пароль не короче 6 символов'
+        this.error = 'Пароль должен быть не короче 6 символов'
+        this.formDisabled = false
         return
       }
 
@@ -79,13 +88,15 @@ export default {
       }).catch((err) => {
         if (!err.response.status) {
           this.error = 'Ошибка сети'
-        } else if (err.response.status === 406) {
-          this.error = 'Неверные данные'
-        } else if (err.response.status === 409) {
-          this.error = 'Логин уже занят'
-        } else {
-          this.error = 'Неизвестная ошибка'
+          this.formDisabled = false
+          return
         }
+        if (err.response.data.client_message) {
+          this.error = err.response.data.client_message
+        } else {
+          this.error = 'Внутренняя ошибка сервиса'
+        }
+        this.formDisabled = false
       })
     }
   }
