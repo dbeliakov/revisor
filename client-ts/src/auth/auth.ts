@@ -2,9 +2,10 @@ import {AxiosStatic, AxiosResponse} from 'axios';
 import {UserInfo} from '@/auth/user-info';
 import {Component, Vue, Watch} from 'vue-property-decorator';
 import { resolve } from 'dns';
+import { responseToError } from '@/utils/utils';
 
 export class Auth {
-    private axios: AxiosStatic;
+    public axios: AxiosStatic; // TODO make it private
     private watch: any;
 
     public constructor(axios: AxiosStatic) {
@@ -63,13 +64,7 @@ export class Auth {
             this.axios.defaults.headers.common.Authorization = token;
             return await this.updateUserInfo();
         } catch (error) {
-            if (!error.response || !error.response.status) {
-                return new Error('Ошибка сети');
-            } else if (error.response.data.client_message) {
-                return new Error(error.response.data.client_message);
-            } else {
-                return new Error('Внутренняя ошибка сервиса');
-            }
+            return responseToError(error);
         }
     }
 
@@ -86,13 +81,7 @@ export class Auth {
                 password,
             });
         } catch (error) {
-            if (!error.response || !error.response.status) {
-                return new Error('Ошибка сети');
-            } else if (error.response.data.client_message) {
-                return new Error(error.response.data.client_message);
-            } else {
-                return new Error('Внутренняя ошибка сервиса');
-            }
+            return responseToError(error);
         }
     }
 
@@ -110,20 +99,14 @@ export class Auth {
     private async updateUserInfo(): Promise<Error | undefined> {
         try {
             const response = await this.axios.get('/auth/user');
-            this.watch.userInfo = response.data.data;
+            this.watch.userInfo = new UserInfo(response.data.data);
             this.watch.authenticated = true;
         } catch (error) {
             this.watch.authenticated = false;
             this.watch.userInfo = undefined;
             this.removeToken();
             this.axios.defaults.headers.common.Authorization = undefined;
-            if (!error.response || !error.response.status) {
-                return new Error('Ошибка сети');
-            } else if (error.response.data.client_message) {
-                return new Error(error.response.data.client_message);
-            } else {
-                return new Error('Внутренняя ошибка сервиса');
-            }
+            return responseToError(error);
         }
     }
 
