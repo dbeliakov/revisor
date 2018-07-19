@@ -7,20 +7,20 @@
 
       <div v-if="$auth.authenticated()" class="ui secondary pointing menu" style="margin-top: 10px;">
         <span style="margin: 5px 20px; text-align: center; font-family: 'Slabo 27px', serif; font-size: 30pt; color: #7777cc;">Revisor</span>
-        <router-link :to="{name: 'OutReviews'}" active-class="active" class="item">
+        <router-link :to="{name: 'outgoing'}" active-class="active" class="item">
           Исходящие
           <!--<div class="ui green label">1</div>-->
         </router-link>
-        <router-link :to="{name: 'InReviews'}" active-class="active" class="item">
+        <router-link :to="{name: 'incoming'}" active-class="active" class="item">
           Входящие
           <!--<div class="ui green label">4</div>-->
         </router-link>
-        <router-link :to="{name: 'NewReview'}" active-class="active" class="item">
+        <router-link :to="{name: 'new-review'}" active-class="active" class="item">
           Новое ревью
         </router-link>
         <div class="right menu">
-          <router-link :to="{name: 'Profile'}" active-class="active" class="item">
-            {{ $auth.user().first_name }} {{ $auth.user().last_name }} ({{ $auth.user().username }})
+          <router-link :to="{name: 'profile'}" active-class="active" class="item">
+            {{ $auth.user().firstName }} {{ $auth.user().lastName }} ({{ $auth.user().username }})
           </router-link>
           <a class="ui item" v-on:click="logout()" href="javascript:void(0);">
             Выйти

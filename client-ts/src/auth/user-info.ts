@@ -3,9 +3,9 @@ export class UserInfo {
     public firstName: string;
     public lastName: string;
 
-    constructor(username: string, firstName: string, lastName: string) {
-        this.username = username;
-        this.firstName = firstName;
-        this.lastName = lastName;
+    public constructor(json: any) {
+        this.username = json.username;
+        this.firstName = json.first_name;
+        this.lastName = json.last_name;
     }
 }
