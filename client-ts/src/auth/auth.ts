@@ -4,7 +4,7 @@ import {Component, Vue, Watch} from 'vue-property-decorator';
 import { resolve } from 'dns';
 import { responseToError } from '@/utils/utils';
 
-export class Auth {
+export default class Auth {
     public axios: AxiosStatic; // TODO make it private
     private watch: any;
 

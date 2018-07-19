@@ -2,7 +2,8 @@ import Vue from 'vue';
 import Router from 'vue-router';
 import Login from '@/views/Login.vue';
 import SignUp from '@/views/SignUp.vue';
-import Reviews from '@/views/Reviews.vue';
+import ReviewsList from '@/views/ReviewsList.vue';
+import NewReview from '@/views/NewReview.vue';
 
 Vue.use(Router);
 
@@ -28,7 +29,7 @@ export default new Router({
     {
       path: '/outgoing',
       name: 'outgoing',
-      component: Reviews,
+      component: ReviewsList,
       meta: {
         requiresAuth: true,
       },
@@ -39,12 +40,20 @@ export default new Router({
     {
       path: '/incoming',
       name: 'incoming',
-      component: Reviews,
+      component: ReviewsList,
       meta: {
         requiresAuth: true,
       },
       props: {
         type: 'incoming',
+      },
+    },
+    {
+      path: '/new-review',
+      name: 'new-review',
+      component: NewReview,
+      meta: {
+        requiresAuth: true,
       },
     },
   ],

@@ -7,6 +7,7 @@ export default class Review {
     public accepted: boolean;
     public owner: UserInfo;
     public reviewers: UserInfo[];
+    public commentsCount: number;
     public updated: Date;
 
     public constructor(json: any) {
@@ -19,6 +20,7 @@ export default class Review {
         for (const reviewer of json.reviewers) {
             this.reviewers.push(new UserInfo(reviewer));
         }
+        this.commentsCount = json.comments_count;
         this.updated = new Date(json.updated * 1000);
     }
 }

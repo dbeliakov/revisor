@@ -15,6 +15,15 @@
             </div>
           </div>
           <div class="field">
+            <div class="ui input">
+              <!--TODO-->
+              <input name="reviewers" placeholder="Добавить ревьюера" type="text" @input="loadReviewersList">
+            </div>
+          </div>
+          <div class=" dropdown-content" v-if="reviewersList.length > 0">
+            <div class="item" v-for="reviewer in reviewersList" :key="reviewer">{{ reviewer }}</div>
+          </div>
+          <div class="field">
             <label for="file" class="ui icon button">
               <i class="file icon"></i>
               {{ filename }}</label>
@@ -38,10 +47,22 @@ export default {
       filename: 'Добавьте файл',
       fileContent: '',
       error: '',
-      formDisabled: false
+      formDisabled: false,
+      reviewersList: [],
+      newReviewerAddText: ''
     }
   },
   methods: {
+    loadReviewersList () {
+      if (this.newReviewerAddText.length > 0) {
+        this.reviewersList = []
+      } else {
+        this.reviewersList = [
+          'Дмитрий Беляков (dbeliakov)',
+          'Павел Борин (borin-pavel)'
+        ]
+      }
+    },
     updateFile (event) {
       if (this.formDisabled) {
         return
@@ -124,5 +145,13 @@ export default {
     max-width: 450px;
     margin: auto;
     margin-top: 40px;
+  }
+  .dropdown-content {
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    padding: 12px 16px;
+    z-index: 1;
   }
 </style>

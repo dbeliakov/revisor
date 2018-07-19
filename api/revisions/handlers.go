@@ -139,6 +139,7 @@ var NewReview = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Req
 		logrus.Errorf("Cannot save new review: %+v", err)
 		utils.Error(w, utils.InternalErrorResponse("Cannot save review"))
 	}
+	utils.Ok(w, nil)
 })
 
 // Review returns information about review
