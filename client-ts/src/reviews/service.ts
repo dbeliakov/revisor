@@ -17,6 +17,23 @@ export default class ReviewsService {
         return this.loadReviews('/reviews/outgoing');
     }
 
+    public async createReview(
+            name: string,
+            reviewers: string,
+            fileName: string,
+            fileContent: string): Promise<Error | undefined> {
+        try {
+            await this.axios.post('/reviews/new', {
+                name,
+                reviewers,
+                file_content: fileContent,
+                file_name: fileName,
+            });
+        } catch (error) {
+            return responseToError(error);
+        }
+    }
+
     private async loadReviews(path: string): Promise<Review[] | Error> {
         try {
             const response = await this.axios.get(path);

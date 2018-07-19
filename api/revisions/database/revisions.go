@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	auth "reviewer/api/auth/database"
+	comments "reviewer/api/comments/database"
 	"reviewer/api/config"
 	. "reviewer/api/database"
 	"reviewer/api/revisions/lib"
@@ -66,6 +67,10 @@ func (review Review) MarshalJSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	comments, err := comments.RootCommentsForReview(review.ID.Hex())
+	if err != nil {
+		return nil, err
+	}
 
 	type Alias Review
 	return json.Marshal(&struct {
@@ -73,12 +78,14 @@ func (review Review) MarshalJSON() ([]byte, error) {
 		Reviewers      []auth.User `json:"reviewers"`
 		Updated        int64       `json:"updated"`
 		RevisionsCount int         `json:"revisions_count"`
+		CommentsCount  int         `json:"comments_count"`
 		*Alias
 	}{
 		Owner:          owner,
 		Reviewers:      reviewers,
 		Updated:        review.Updated.Unix(),
 		RevisionsCount: review.File.RevisionsCount(),
+		CommentsCount:  len(comments),
 		Alias:          (*Alias)(&review),
 	})
 }

@@ -1,10 +1,12 @@
 <template>
   <div style="margin: 20px 40px;">
-    <div class="ui checkbox" style="float: left; margin-bottom: 10px;">
-      <input name="example" type="checkbox" v-model="showClosed">
-      <label>Отображать закрытые</label>
+    <div class="ui four item menu" style="float: right; width: 400px; font-size: 8pt;">
+      <a class="item" :class="{active: showMode === 'all'}" @click.prevent="show('all')">Все</a>
+      <a class="item" :class="{active: showMode === 'open'}" @click.prevent='show("open")'>Открытые</a>
+      <a class="item" :class="{active: showMode === 'accepted'}" @click.prevent='show("accepted")'>Принятые</a>
+      <a class="item" :class="{active: showMode === 'rejected'}" @click.prevent='show("rejected")'>Отклоненные</a>
     </div>
-    <table class="ui celled striped table">
+    <table class="ui single line striped table">
       <thead>
         <tr><th>
           Имя
@@ -16,6 +18,9 @@
           Ревьюеры
         </th>
         <th>
+          Комментарии
+        </th>
+        <th>
           Обновлено
         </th>
       </tr></thead>
@@ -24,12 +29,16 @@
             v-bind:class="{positive: review.closed && review.accepted, negative: review.closed && !review.accepted}">
           <td><router-link :to="'/review/' + review.id">{{review.name}}</router-link></td>
           <td class="collapsing">
-            {{review.owner.firstName}} {{review.owner.lastName}} ({{review.owner.username}})
+            {{ review.owner.firstName }} {{ review.owner.lastName }}
           </td>
           <td class="collapsing">
             <span v-for="reviewer in review.reviewers" :key="reviewer.username">
-              {{reviewer.firstName}} {{reviewer.lastName}} ({{reviewer.username}})
+              {{ reviewer.firstName }} {{ reviewer.lastName }}
             </span>
+          </td>
+          <td class="collapsing">
+            <i class="comments outline icon"></i>{{review.commentsCount}}
+            <i class="bug icon"></i>{{0}}
           </td>
           <td class="right aligned collapsing">{{timeToString(review.updated)}}</td>
         </tr>
@@ -45,28 +54,26 @@ import ReviewsService from '@/reviews/service';
 import {timeToString} from '@/utils/utils';
 
 @Component
-export default class Reviews extends Vue {
+export default class ReviewsList extends Vue {
     @Prop(String)
     public type!: string;
 
     public reviews: Review[] = [];
     public error: string = '';
-    public showClosed: boolean = false;
+    public showMode: string = 'open';
 
     public timeToString = timeToString;
-    private service?: ReviewsService = undefined;
 
     public created() {
-        this.service = new ReviewsService(this.$auth.axios); // TODO fix it
         this.updateReviews();
     }
 
     public async updateReviews() {
         let result: Review[] | Error;
         if (this.type === 'incoming') {
-            result = await this.service!.loadIncomingReviews();
+            result = await this.$reviews.loadIncomingReviews();
         } else if (this.type === 'outgoing') {
-            result = await this.service!.loadOutgoingReviews();
+            result = await this.$reviews.loadOutgoingReviews();
         } else {
             return;
         }
@@ -79,10 +86,20 @@ export default class Reviews extends Vue {
     }
 
     public get computedFilteredReviews() {
-        if (this.showClosed) {
+        if (this.showMode === 'all') {
             return this.reviews;
+        } else if (this.showMode === 'open') {
+          return this.reviews.filter((review) => !review.closed);
+        } else if (this.showMode === 'accepted') {
+          return this.reviews.filter((review) => review.closed && review.accepted);
+        } else if (this.showMode === 'rejected') {
+          return this.reviews.filter((review) => review.closed && !review.accepted);
         }
-        return this.reviews.filter((review) => !review.closed);
+        return [];
+    }
+
+    public show(mode: string) {
+      this.showMode = mode;
     }
 
     @Watch('$route')
@@ -92,3 +109,7 @@ export default class Reviews extends Vue {
     }
 }
 </script>
+
+<style lang="scss">
+@import '~semantic-ui-css/semantic.min.css';
+</style>

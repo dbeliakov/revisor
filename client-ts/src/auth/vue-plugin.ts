@@ -1,5 +1,5 @@
 import _Vue from 'vue';
-import {Auth} from '@/auth/auth';
+import Auth from '@/auth/auth';
 import {AxiosStatic} from 'axios';
 import Router from 'vue-router';
 
