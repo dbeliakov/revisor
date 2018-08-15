@@ -92,6 +92,17 @@ export default class Auth {
         this.axios.defaults.headers.common.Authorization = undefined;
     }
 
+    public async changePassword(oldPassword: string, newPassword: string): Promise<Error | undefined> {
+        try {
+            const response = await this.axios.post('/auth/change/password', {
+                old_password: oldPassword,
+                new_password: newPassword,
+            });
+        } catch (error) {
+            return responseToError(error);
+        }
+    }
+
     private sleep(): Promise<void> {
         return new Promise((res) => setTimeout(res, 100 /*ms*/));
     }
