@@ -385,3 +385,29 @@ var Accept = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Reques
 		return
 	}
 })
+
+// SearchReviewer by login or by name
+var SearchReviewer = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
+	query, ok := r.URL.Query()["query"]
+	if !ok || len(query) == 0 || len(query[0]) == 0 {
+		logrus.Warnf("Empty query for search")
+		utils.Error(w, utils.JSONErrorResponse{
+			Status:        http.StatusBadRequest,
+			Message:       "Empty Query",
+			ClientMessage: "Пустой запрос для поиска",
+		})
+		return
+	}
+
+	results, err := auth.SearchUsers(query[0])
+	if err != nil {
+		logrus.Errorf("Cannot find reviewers: %+v", err)
+		utils.Error(w, utils.JSONErrorResponse{
+			Status:        http.StatusInternalServerError,
+			Message:       "Cannot find users",
+			ClientMessage: "Не удалось произвести поиск пользователей",
+		})
+		return
+	}
+	utils.Ok(w, results)
+})

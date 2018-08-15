@@ -33,12 +33,13 @@
           </td>
           <td class="collapsing">
             <span v-for="reviewer in review.reviewers" :key="reviewer.username">
-              {{ reviewer.firstName }} {{ reviewer.lastName }}
+              {{ reviewer.firstName }} {{ reviewer.lastName }}<template v-if="reviewer !== review.reviewers[review.reviewers.length - 1]">,</template>
             </span>
           </td>
           <td class="collapsing">
             <i class="comments outline icon"></i>{{review.commentsCount}}
-            <i class="bug icon"></i>{{0}}
+            <!--TODO-->
+            <!--<i class="bug icon"></i>{{0}}-->
           </td>
           <td class="right aligned collapsing">{{timeToString(review.updated)}}</td>
         </tr>

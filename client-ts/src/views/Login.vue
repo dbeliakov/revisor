@@ -15,7 +15,7 @@
                     <input name="password" v-model="password" placeholder="Пароль" type="password">
                     </div>
                 </div>
-                <button class="ui fluid large blue submit button" v-bind:class="{'disabled': formDisabled}" type="submit">Войти</button>
+                <button class="ui fluid large blue submit button" :class="{'disabled': formDisabled}" type="submit">Войти</button>
                 </div>
 
                 <div class="ui negative message" v-if="error.length > 0">{{ error }}</div>

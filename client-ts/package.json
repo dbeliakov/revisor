@@ -13,7 +13,10 @@
     "vue-property-decorator": "^7.0.0",
     "vue-router": "^3.0.1",
     "axios": "^0.18.0",
-    "semantic-ui-css": "^2.3.3"
+    "semantic-ui-css": "^2.3.3",
+    "diff2html": "2.3.3",
+    "highlightjs": "^9.10.0",
+    "jquery-ui": "^1.12.1"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^3.0.0-rc.5",

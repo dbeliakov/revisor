@@ -132,3 +132,41 @@ func (user *User) Save() error {
 	}
 	return nil
 }
+
+// SearchUsers by login or name
+// TODO use indexes and text search
+func SearchUsers(query string) ([]User, error) {
+	s := Session.Copy()
+	defer s.Close()
+
+	const COUNT = 5
+
+	c := collection(s)
+	var results []User
+	var tmpResults []User
+	err := c.Find(bson.M{"user.login": &bson.RegEx{Pattern: query, Options: "i"}}).All(&results)
+	if err != nil {
+		return results, err
+	}
+	results = append(results, tmpResults...)
+	if len(results) >= COUNT {
+		return results[:COUNT], nil
+	}
+	err = c.Find(bson.M{"user.lastname": &bson.RegEx{Pattern: query, Options: "i"}}).All(&tmpResults)
+	if err != nil {
+		return results, err
+	}
+	results = append(results, tmpResults...)
+	if len(results) >= COUNT {
+		return results[:COUNT], nil
+	}
+	err = c.Find(bson.M{"user.firstname": &bson.RegEx{Pattern: query, Options: "i"}}).All(&tmpResults)
+	if err != nil {
+		return results, err
+	}
+	results = append(results, tmpResults...)
+	if len(results) >= COUNT {
+		return results[:COUNT], nil
+	}
+	return results, nil
+}

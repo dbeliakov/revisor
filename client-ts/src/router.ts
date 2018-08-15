@@ -4,6 +4,8 @@ import Login from '@/views/Login.vue';
 import SignUp from '@/views/SignUp.vue';
 import ReviewsList from '@/views/ReviewsList.vue';
 import NewReview from '@/views/NewReview.vue';
+import Profile from '@/views/Profile.vue';
+import Review from '@/views/Review.vue';
 
 Vue.use(Router);
 
@@ -52,6 +54,22 @@ export default new Router({
       path: '/new-review',
       name: 'new-review',
       component: NewReview,
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: Profile,
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: '/review/:id',
+      name: 'review',
+      component: Review,
       meta: {
         requiresAuth: true,
       },

@@ -29,6 +29,7 @@ func addAPIHandlers(base string, r *mux.Router) {
 	r.HandleFunc(base+"/reviews/{id}/update", revisions.UpdateReview).Methods("POST")
 	r.HandleFunc(base+"/reviews/{id}/accept", revisions.Accept).Methods("GET")
 	r.HandleFunc(base+"/reviews/{id}/decline", revisions.Decline).Methods("GET")
+	r.HandleFunc(base+"/users/search", revisions.SearchReviewer).Methods("GET")
 
 	// Comments handlers
 	r.HandleFunc(base+"/comments/add", comments.AddComment).Methods("POST")
