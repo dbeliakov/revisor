@@ -1,25 +1,14 @@
 <template>
-    <div class="comments">
-        <div class="comment"
+    <div class="line-comments">
+        <CommentComponent
         v-for="comment in comments"
         :key="comment.id"
-        :class="{'not-first': comment.id != comments[0].id}">
-            <div class="avatar" :style="{'background-color': avatarColors[userHash(comment.author) % avatarColors.length]}">
-                <span class="avatar-auto">{{comment.author.first_name[0]}}</span>
-            </div>
-            <div class="comment-body">
-                <div class="header">
-                    <span class="author">{{ comment.author.first_name }} {{ comment.author.last_name }}</span>
-                    <span class="login">{{comment.author.username}}</span>
-                </div>
-                <div class="content">{{ comment.text }}</div>
-                <div class="footer">
-                    <a href="#" @click.prevent="$emit('new-comment')">Ответить</a><i class="circle icon"></i>
-                    <!--<a href="#" @click.prevent>Редактировать</a><i class="circle icon"></i>-->
-                    <a href="#" @click.prevent>{{ timeToString(new Date(comment.created * 1000)) }}</a>
-                </div>
-            </div>
-        </div>
+        :notFirst="comment.id != comments[0].id"
+        :comment="comment"
+        :reviewId="reviewId"
+        :lineId="lineId"
+        @saved="$emit('saved')"></CommentComponent>
+
         <NewComment
         v-if="baseNewComment"
         class="new-comment"
@@ -27,7 +16,8 @@
         :author="$auth.user()"
         :reviewId="reviewId"
         :lineId="lineId"
-        @saved="$emit('saved')"></NewComment>
+        @saved="$emit('saved')"
+        @cancelled="$emit('cancelled')"></NewComment>
     </div>
 </template>
 
@@ -37,37 +27,22 @@ import {timeToString} from '@/utils/utils';
 import Comment from '@/reviews/comment';
 import {UserInfo} from '@/auth/user-info';
 import NewComment from '@/components/NewComment.vue';
+import CommentComponent from '@/components/Comment.vue';
+import Marked from 'marked';
 
 @Component({
-    components: {NewComment},
+    components: {NewComment, CommentComponent},
 })
 export default class Comments extends Vue {
     @Prop({default: []}) public readonly comments!: Comment[];
     @Prop({default: false}) public baseNewComment!: boolean;
     @Prop({default: ''}) public readonly reviewId!: string;
     @Prop({default: ''}) public readonly lineId!: string;
-
-    public timeToString = timeToString;
-    public avatarColors = [
-        "#FFCC00", "#FF6666", "#CC66CC",
-        "#9966FF", "#3366FF", "#66CCCC",
-        "#33FF99", "#CCCC33", "#99CC33"]
-
-    public userHash(user: UserInfo) {
-        var hash = 0, i, chr;
-        if (user.id.length === 0) return hash;
-        for (i = 0; i < user.id.length; i++) {
-            chr   = user.id.charCodeAt(i);
-            hash  = ((hash << 5) - hash) + chr;
-            hash |= 0; // Convert to 32bit integer
-        }
-        return hash;
-    }
 }
 </script>
 
 <style lang="scss">
-.comments {
+.line-comments {
     margin: 10px;
     border: 1px solid lightgrey;
     border-radius: 5px;
@@ -102,7 +77,8 @@ export default class Comments extends Vue {
 }
 
 .content {
-    white-space: pre-wrap;
+    margin-bottom: 5px;
+    margin-top: 5px;
 }
 
 .author {

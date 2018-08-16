@@ -16,7 +16,9 @@
     "semantic-ui-css": "^2.3.3",
     "diff2html": "2.3.3",
     "highlightjs": "^9.10.0",
-    "jquery-ui": "^1.12.1"
+    "jquery-ui": "^1.12.1",
+    "marked": "^0.4.0",
+    "@types/marked": "^0.4.0"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "^3.0.0-rc.5",

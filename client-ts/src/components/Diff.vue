@@ -35,11 +35,9 @@
                           :comments="comments[line.id]"
                           :reviewId="reviewId"
                           :lineId="line.id"
-                          @saved="$emit('update-all')"></Comments></td>
+                          @saved="$emit('update-all')"
+                          @cancelled="newCommentsShown[line.id] = false; $forceUpdate()"></Comments></td>
                       </tr>
-                      <!--<tr v-bind:key="line.id + 'new_comment'" v-if="newCommentsShown[line.id]">
-                        <td colspan="2"><new-comment :parent="''" :reviewId="reviewId" :lineId="line.id" @saved="$emit('update-all')"></new-comment></td>
-                      </tr>-->
                     </template>
                     </template>
                   </tbody>
@@ -160,11 +158,7 @@ export default {
   },
   methods: {
     showNewCommentForm (lineId) {
-      if (this.newCommentsShown[lineId]) {
-        this.newCommentsShown[lineId] = false
-      } else {
-        this.newCommentsShown[lineId] = true
-      }
+      this.newCommentsShown[lineId] = true
       this.$forceUpdate()
     }
   },
