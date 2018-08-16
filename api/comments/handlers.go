@@ -29,6 +29,7 @@ var AddComment = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Re
 
 	var parent *database.Comment = nil
 	if form.Parent != "" {
+		logrus.Info("Parent id: " + form.Parent)
 		p, err := database.CommentByID(form.Parent)
 		if err != nil {
 			logrus.Warnf("Cannot find parent comment: %+v", err)

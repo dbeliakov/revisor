@@ -81,14 +81,14 @@ export default class ReviewsService {
         }
     }
 
-    public async addComment(lineId: string, reviewId: string, text: string)
+    public async addComment(lineId: string, reviewId: string, text: string, parentId: string = '')
             : Promise<Error | undefined> {
         try {
             await this.axios.post('/comments/add', {
                 review_id: reviewId,
                 line_id: lineId,
                 text,
-                parent: '',
+                parent: parentId,
             });
         } catch (error) {
             return responseToError(error);
