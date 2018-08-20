@@ -32,7 +32,7 @@
       </div>
     </div>
 
-    <diff v-if="review" :diff="review.diff" :commentsList="review.comments" :reviewId="review_id" @update-all="updateReview()"></diff>
+    <diff v-if="review" :diff="new Diff(review.diff)" :commentsList="review.comments.map((json) => new Comment(json))" :reviewId="review_id" @update-all="updateReview()"></diff>
 
     <div class="ui modal" id="add_revision">
       <i class="close icon"></i>
@@ -68,7 +68,9 @@
 </template>
 
 <script>
-import Diff from '@/components/Diff'
+import DiffComponent from '@/components/Diff'
+import { Diff } from '@/reviews/diff';
+import Comment from '@/reviews/comment';
 
 var $ = require('jquery')
 window.$ = $
@@ -81,7 +83,7 @@ require('jquery-ui/themes/base/all.css')
 export default {
   name: 'Review',
   components: {
-    'diff': Diff
+    'diff': DiffComponent
   },
   props: ['id'],
   created () {
@@ -97,7 +99,9 @@ export default {
       filename: 'Добавить файл',
       fileContent: '',
       startRev: null,
-      endRev: null
+      endRev: null,
+      Diff: Diff,
+      Comment: Comment,
     }
   },
   methods: {
@@ -175,9 +179,6 @@ export default {
       }
       if (this.fileContent.length > 0) {
         data['new_revision'] = this.fileContent
-        console.log(data['new_revision'])
-      } else {
-        console.log('NO NEW REVISION')
       }
       this.$auth.axios.post('/reviews/' + this.review_id + '/update', data).then(() => {
         $('#add_revision').modal('hide')

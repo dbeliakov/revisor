@@ -1,24 +1,17 @@
 <template>
   <div id="diff-content">
     <div class="d2h-wrapper">
-          <!--TODO language from file extension-->
           <div class="d2h-file-wrapper" :data-lang="fileExt">
             <div class="d2h-file-diff">
               <div class="d2h-code-wrapper">
                 <table class="d2h-diff-table">
                   <tbody class="d2h-diff-tbody">
-                    <template v-for="group in groups">
-                    <tr v-bind:key="group.id">
-                      <td class="d2h-code-linenumber d2h-info"></td>
-                      <td class="d2h-info">
-                        <div class="d2h-code-line d2h-info">{{ group.range }}</div>
-                      </td>
-                    </tr>
+                    <template v-for="group in computedGroups()">
                     <template v-for="line in group.lines" >
                       <tr v-bind:key="line.id" @click="showNewCommentForm(line.id)">
                         <td class="d2h-code-linenumber" v-bind:class="{'d2h-cntx': line.type === 'no', 'd2h-ins': line.type === 'insert', 'd2h-del': line.type === 'delete'}">
-                          <div class="line-num1">{{ line.old_num }}</div>
-                          <div class="line-num2">{{ line.new_num }}</div>
+                          <div class="line-num1">{{ line.oldNum }}</div>
+                          <div class="line-num2">{{ line.newNum }}</div>
                         </td>
                         <td v-bind:class="{'d2h-cntx': line.type === 'no', 'd2h-ins': line.type === 'insert', 'd2h-del': line.type === 'delete'}">
                           <div class="d2h-code-line" v-bind:class="{'d2h-cntx': line.type === 'no', 'd2h-ins': line.type === 'insert', 'd2h-del': line.type === 'delete'}">
@@ -28,11 +21,11 @@
                       </tr>
                       <tr
                       v-bind:key="line.id + 'comment'"
-                      v-if="comments[line.id] || newCommentsShown[line.id]"
+                      v-if="computedComments()[line.id] || newCommentsShown[line.id]"
                       v-bind:class="{'d2h-cntx': line.type === 'no', 'd2h-ins': line.type === 'insert', 'd2h-del': line.type === 'delete'}">
                         <td colspan="2"><Comments
                           :baseNewComment="newCommentsShown[line.id]"
-                          :comments="comments[line.id]"
+                          :comments="computedComments()[line.id]"
                           :reviewId="reviewId"
                           :lineId="line.id"
                           @saved="$emit('update-all')"
@@ -49,128 +42,126 @@
   </div>
 </template>
 
-<script>
-/* global Diff2HtmlUI */
-import Comments from '@/components/Comments'
-import NewComment from './NewComment.vue'
+<script lang="ts">
+import {Component, Vue, Prop, Watch} from 'vue-property-decorator';
+import { Diff, DiffLine, Line } from '@/reviews/diff';
+import Comment from '@/reviews/comment';
+import Comments from '@/components/Comments.vue';
+import 'diff2html/dist/diff2html-ui.js';
 
-var $ = require('jquery')
-window.$ = $
-window.jQuery = $
+// TODO
+let jQuery = require('jquery');
+(<any>window).$ = jQuery;
+(<any>window).jQuery = jQuery;
+(<any>window).hljs = require('highlightjs');
 
-var hljs = require('highlightjs')
-window.hljs = hljs;
+// TODO
+require('diff2html/dist/diff2html-ui.js');
+declare var Diff2HtmlUI: any;
 
-require('highlightjs/styles/github.css')
-require('diff2html')
-require('diff2html/dist/diff2html.css')
-require('diff2html/dist/diff2html-ui.js')
-require('semantic-ui-css/semantic.min.js')
+class UILine {
+  public oldNum: number = 0;
+  public newNum: number = 0;
+  public id: string = '';
 
-function formatRangeUnified (start, stop) {
-  var beginning = start + 1
-  var length = stop - start
-  if (length === 1) {
-    return '' + beginning
+  public old: Line | undefined;
+  public new: Line | undefined;
+  public type: string;
+
+  constructor(line: DiffLine) {
+    this.old = line.old;
+    this.new = line.new;
+    this.type = line.type;
   }
-  if (length === 0) {
-    --beginning
-  }
-  return '' + beginning + ',' + length
 }
 
-export default {
-  name: 'Diff',
-  props: {
-    diff: '',
-    reviewId: '',
-    commentsList: ''
-  },
-  components: {
-    'Comments': Comments,
-    'new-comment': NewComment
-  },
-  data () {
-    return {
-      newCommentsShown: {}
-    }
-  },
-  computed: {
-    groups () {
-      var result = []
+@Component({
+  components: {Comments}
+})
+export default class DiffComponent extends Vue {
+  @Prop({default: undefined}) public diff!: Diff;
+  @Prop({default: ''}) public reviewId!: string;
+  @Prop({default: []}) public commentsList!: Comment[];
+
+  public newCommentsShown: {[key:string] : boolean} = {};
+
+  public computedGroups() {
+      let result = [];
       for (var i = 0; i < this.diff.groups.length; ++i) {
-        var group = this.diff.groups[i]
-        var oldFrom = group.old_range.from + 1
-        var newFrom = group.new_range.from + 1
-        var resGroup = {
-          range: '@@ -' + formatRangeUnified(group.old_range.from, group.old_range.to) + ' +' +
-            formatRangeUnified(group.new_range.from, group.new_range.to) + ' @@\n',
-          lines: [],
-          id: 'group' + i
-        }
+        let group = this.diff.groups[i];
+        let oldFrom = group.oldRange.from + 1;
+        let newFrom = group.newRange.from + 1;
+        let resGroup = {
+          id: 'group' + i,
+          lines: new Array<UILine>(),
+        };
         for (var j = 0; j < group.lines.length; ++j) {
-          var line = group.lines[j]
+          let line = group.lines[j];
+          let uiLine = new UILine(line);
           if (line.type === 'no') {
-            line.old_num = oldFrom++
-            line.new_num = newFrom++
-            if (line.old.id !== line.new.id) {
-              console.log('Incorrect line ids')
-            }
-            line.id = line.old.id
+            uiLine.oldNum = oldFrom++;
+            uiLine.newNum = newFrom++;
+            uiLine.id = line.old!.id; // === line.new.id
           } else if (line.type === 'insert') {
-            line.new_num = newFrom++
-            line.id = line.new.id
+            uiLine.newNum = newFrom++;
+            uiLine.id = line.new!.id;
           } else if (line.type === 'delete') {
-            line.old_num = oldFrom++
-            line.id = line.old.id
+            uiLine.oldNum = oldFrom++;
+            uiLine.id = line.old!.id;
           }
-          resGroup.lines.push(line)
+          resGroup.lines.push(uiLine);
         }
-        result.push(resGroup)
+        result.push(resGroup);
       }
       return result
-    },
-    comments () {
-      var result = {}
+    }
+
+    public computedComments() {
+      var result: {[key:string] : any} = {};
       for (var j = 0; j < this.commentsList.length; ++j) {
-        if (!result[this.commentsList[j].line_id]) {
-          result[this.commentsList[j].line_id] = []
+        if (!result[this.commentsList[j].lineId]) {
+          result[this.commentsList[j].lineId] = [];
         }
-        // "Unexpected side effect in "comments" computed property" overvise
-        var tmp = result[this.commentsList[j].line_id]
-        tmp.push(this.commentsList[j])
-        result[this.commentsList[j].line_id] = tmp
+        // "Unexpected side effect in "comments" computed property overvise
+        // TODO
+        var tmp = result[this.commentsList[j].lineId];
+        tmp.push(this.commentsList[j]);
+        result[this.commentsList[j].lineId] = tmp;
       }
-      return result
-    },
-    fileExt () {
+      return result;
+    }
+
+    public fileExt() {
         return this.diff.filename.split('.').pop();
     }
-   },
-  updated () {
-    var diff2htmlUi = new Diff2HtmlUI()
-    diff2htmlUi.highlightCode('#diff-content')
-  },
-  mounted () {
-    this.newCommentsShown = {}
-    var diff2htmlUi = new Diff2HtmlUI()
-    diff2htmlUi.highlightCode('#diff-content')
-  },
-  methods: {
-    showNewCommentForm (lineId) {
-      this.newCommentsShown[lineId] = true
-      this.$forceUpdate()
+
+    public updated() {
+      var diff2htmlUi = new Diff2HtmlUI();
+      diff2htmlUi.highlightCode('#diff-content');
     }
-  },
-  watch: {
-    diff () {
-      this.newCommentsShown = {}
+
+    public mounted() {
+      this.newCommentsShown = {};
+      var diff2htmlUi = new Diff2HtmlUI();
+      diff2htmlUi.highlightCode('#diff-content');
     }
-  }
+
+    public showNewCommentForm(lineId: string) {
+      this.newCommentsShown[lineId] = true;
+      this.$forceUpdate();
+    }
+
+    @Watch('diff')
+    public onDiffChanged() {
+      this.newCommentsShown = {};
+    }
 }
 </script>
 
 <style lang="scss" scoped>
+@import '~highlightjs/styles/github.css';
+@import '~diff2html/dist/diff2html.css';
+
 .d2h-file-diff {
   overflow-x: hidden !important;
 }

@@ -6,6 +6,7 @@ export default class Comment {
     public created: Date;
     public text: string;
     public lineId: string;
+    public childs: Comment[];
 
     public constructor(json: any) {
         this.id = json.id;
@@ -13,5 +14,10 @@ export default class Comment {
         this.created = new Date(json.created * 1000);
         this.text = json.text;
         this.lineId = json.line_id;
+        if (json.childs) {
+            this.childs = json.childs.map((child: any) => new Comment(child));
+        } else {
+            this.childs = [];
+        }
     }
 }

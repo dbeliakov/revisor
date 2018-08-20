@@ -2,17 +2,17 @@
     <div style="display: inline;">
         <div class="comment" :class="{'not-first': notFirst}" :style="{'margin-left': (20 + level * 40) + 'px'}">
             <div class="avatar" :style="{'background-color': avatarColors[userHash(comment.author) % avatarColors.length]}">
-                <span class="avatar-auto">{{comment.author.first_name[0]}}</span>
+                <span class="avatar-auto">{{comment.author.firstName[0]}}</span>
             </div>
             <div class="comment-body">
                 <div class="header">
-                    <span class="author">{{ comment.author.first_name }} {{ comment.author.last_name }}</span>
+                    <span class="author">{{ comment.author.firstName }} {{ comment.author.lastName }}</span>
                     <span class="login">{{comment.author.username}}</span>
                 </div>
                 <div class="content"><span v-html="toMarkdown(comment.text)"></span></div>
                 <div class="footer">
                     <a href="#" @click.prevent="showReply=true;">Ответить</a><i class="circle icon"></i>
-                    <a href="#" @click.prevent>{{ timeToString(new Date(comment.created * 1000)) }}</a>
+                    <a href="#" @click.prevent>{{ timeToString(comment.created) }}</a>
                 </div>
             </div>
         </div>
@@ -46,7 +46,6 @@ import {Component, Vue, Prop, Provide} from 'vue-property-decorator';
 import { timeToString } from '@/utils/utils';
 import { UserInfo } from '@/auth/user-info';
 import Marked from 'marked';
-//import CommentComponent from '@/components/Comment.vue';
 import NewComment from '@/components/NewComment.vue';
 
 @Component({

@@ -57,6 +57,15 @@ func (review Review) Reviewers() ([]auth.User, error) {
 	return result, nil
 }
 
+func commentsCount(comments []comments.Comment) int {
+	result := 0
+	for _, comment := range comments {
+		childs, _ := comment.Childs()
+		result += 1 + commentsCount(childs)
+	}
+	return result
+}
+
 // MarshalJSON returns json with basic information about review
 func (review Review) MarshalJSON() ([]byte, error) {
 	owner, err := review.Owner()
@@ -85,7 +94,7 @@ func (review Review) MarshalJSON() ([]byte, error) {
 		Reviewers:      reviewers,
 		Updated:        review.Updated.Unix(),
 		RevisionsCount: review.File.RevisionsCount(),
-		CommentsCount:  len(comments),
+		CommentsCount:  commentsCount(comments),
 		Alias:          (*Alias)(&review),
 	})
 }

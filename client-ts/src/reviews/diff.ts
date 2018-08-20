@@ -1,6 +1,6 @@
 import Comment from '@/reviews/comment';
 
-class Line {
+export class Line {
     public content: string;
     public revision: number;
     public id: string;
@@ -12,19 +12,23 @@ class Line {
     }
 }
 
-class DiffLine {
+export class DiffLine {
     public type: string;
-    public old: Line;
-    public new: Line;
+    public old: Line | undefined = undefined;
+    public new: Line | undefined = undefined;
 
     public constructor(json: any) {
         this.type = json.type;
-        this.old = new Line(json.old);
-        this.new = new Line(json.new);
+        if (json.old) {
+            this.old = new Line(json.old);
+        }
+        if (json.new) {
+            this.new = new Line(json.new);
+        }
     }
 }
 
-class DiffRange {
+export class DiffRange {
     public from: number;
     public to: number;
 
@@ -34,7 +38,7 @@ class DiffRange {
     }
 }
 
-class DiffGroup {
+export class DiffGroup {
     public oldRange: DiffRange;
     public newRange: DiffRange;
     public lines: DiffLine[];
@@ -55,7 +59,7 @@ export class Diff {
 
     public constructor(json: any) {
         this.filename = json.filename;
-        this.groups = []
+        this.groups = [];
         for (const group of json.groups) {
             this.groups.push(new DiffGroup(group));
         }
