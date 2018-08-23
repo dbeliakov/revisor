@@ -6,7 +6,7 @@ import {AuthPlugin} from '@/auth/vue-plugin';
 import {ReviewsPlugin} from '@/reviews/vue-plugin';
 
 const axios = Axios.create({
-  baseURL: 'http://localhost:8090/api',
+  baseURL: 'https://revisor.dbeliakov.ru/api',
 });
 
 Vue.config.productionTip = false;

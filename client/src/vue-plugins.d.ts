@@ -1,4 +1,4 @@
-import Auth from "@/auth/auth";
+import Auth from '@/auth/auth';
 import ReviewsService from '@/reviews/service';
 
 declare module 'vue/types/vue' {
