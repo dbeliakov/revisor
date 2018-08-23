@@ -1,7 +1,7 @@
 <template>
   <div id="diff-content">
     <div class="d2h-wrapper">
-          <div class="d2h-file-wrapper" :data-lang="fileExt">
+          <div class="d2h-file-wrapper" :data-lang="fileExt()">
             <div class="d2h-file-diff">
               <div class="d2h-code-wrapper">
                 <table class="d2h-diff-table">
