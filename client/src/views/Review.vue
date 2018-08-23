@@ -63,6 +63,7 @@
 </template>
 
 <script>
+/* tslint:disable */
 import DiffComponent from '@/components/Diff'
 import { Diff } from '@/reviews/diff';
 import Comment from '@/reviews/comment';
