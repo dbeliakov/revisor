@@ -45,7 +45,7 @@ func main() {
 	addClientFilesHandlers(r)
 
 	handler := gh.CombinedLoggingHandler(os.Stdout, r)
-	listenAddres := ":80"
+    listenAddres := "[::]:80"
 
 	if config.Debug {
 		handler = gh.CORS(
@@ -54,7 +54,7 @@ func main() {
 			gh.AllowedHeaders([]string{"Content-Type", "Authorization"}),
 			gh.ExposedHeaders([]string{"Authorization"}),
 		)(handler)
-		listenAddres = "127.0.0.1:8090"
+        listenAddres = "[::]:8090"
 	}
 	err := http.ListenAndServe(listenAddres, handler)
 	if err != nil {
