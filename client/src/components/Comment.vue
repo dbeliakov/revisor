@@ -1,7 +1,7 @@
 <template>
     <div style="display: inline;">
         <div class="comment" :class="{'not-first': notFirst}" :style="{'margin-left': (20 + level * 40) + 'px'}">
-            <div class="avatar" :style="{'background-color': avatarColors[userHash(comment.author) % avatarColors.length]}">
+            <div class="avatar" :style="{'background-color': userAvatarColor(comment.author)}">
                 <span class="avatar-auto">{{comment.author.firstName[0]}}</span>
             </div>
             <div class="comment-body">
@@ -43,13 +43,13 @@
 
 <script lang="ts">
 import {Component, Vue, Prop, Provide} from 'vue-property-decorator';
-import { timeToString } from '@/utils/utils';
+import { timeToString, userAvatarColor } from '@/utils/utils';
 import { UserInfo } from '@/auth/user-info';
 import Marked from 'marked';
 import NewComment from '@/components/NewComment.vue';
 
 @Component({
-    components: {NewComment}
+    components: {NewComment},
 } )
 export default class Comment extends Vue {
     @Prop({default: undefined}) public readonly comment!: Comment;
@@ -61,21 +61,7 @@ export default class Comment extends Vue {
     public showReply: boolean = false;
 
     public timeToString = timeToString;
-    public avatarColors = [
-        "#FFCC00", "#FF6666", "#CC66CC",
-        "#9966FF", "#3366FF", "#66CCCC",
-        "#33FF99", "#CCCC33", "#99CC33"]
-
-    public userHash(user: UserInfo) {
-        var hash = 0, i, chr;
-        if (user.id.length === 0) return hash;
-        for (i = 0; i < user.id.length; i++) {
-            chr   = user.id.charCodeAt(i);
-            hash  = ((hash << 5) - hash) + chr;
-            hash |= 0; // Convert to 32bit integer
-        }
-        return hash;
-    }
+    public userAvatarColor = userAvatarColor;
 
     public toMarkdown(text: string) {
         return Marked.parse(text);

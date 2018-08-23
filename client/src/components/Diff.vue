@@ -24,7 +24,7 @@
                       v-if="computedComments()[line.id] || newCommentsShown[line.id]"
                       v-bind:class="{'d2h-cntx': line.type === 'no', 'd2h-ins': line.type === 'insert', 'd2h-del': line.type === 'delete'}">
                         <td colspan="2"><Comments
-                          :baseNewComment="newCommentsShown[line.id]"
+                          :newCommentFormShown="newCommentsShown[line.id]"
                           :comments="computedComments()[line.id]"
                           :reviewId="reviewId"
                           :lineId="line.id"
@@ -43,20 +43,20 @@
 </template>
 
 <script lang="ts">
+/* tslint:disable:no-var-requires */
 import {Component, Vue, Prop, Watch} from 'vue-property-decorator';
 import { Diff, DiffLine, Line } from '@/reviews/diff';
 import Comment from '@/reviews/comment';
 import Comments from '@/components/Comments.vue';
 import 'diff2html/dist/diff2html-ui.js';
-
-// TODO
-let jQuery = require('jquery');
-(<any>window).$ = jQuery;
-(<any>window).jQuery = jQuery;
-(<any>window).hljs = require('highlightjs');
-
-// TODO
+// TODO use ts versions
+const jQuery = require('jquery');
 require('diff2html/dist/diff2html-ui.js');
+const hljs = require('highlightjs');
+
+(window as any).$ = jQuery;
+(window as any).jQuery = jQuery;
+(window as any).hljs = hljs;
 declare var Diff2HtmlUI: any;
 
 class UILine {
@@ -76,28 +76,27 @@ class UILine {
 }
 
 @Component({
-  components: {Comments}
+  components: {Comments},
 })
 export default class DiffComponent extends Vue {
   @Prop({default: undefined}) public diff!: Diff;
   @Prop({default: ''}) public reviewId!: string;
   @Prop({default: []}) public commentsList!: Comment[];
 
-  public newCommentsShown: {[key:string] : boolean} = {};
+  public newCommentsShown: {[key: string]: boolean} = {};
 
   public computedGroups() {
-      let result = [];
-      for (var i = 0; i < this.diff.groups.length; ++i) {
-        let group = this.diff.groups[i];
+      const result = [];
+      for (let i = 0; i < this.diff.groups.length; ++i) {
+        const group = this.diff.groups[i];
         let oldFrom = group.oldRange.from + 1;
         let newFrom = group.newRange.from + 1;
-        let resGroup = {
+        const resGroup = {
           id: 'group' + i,
           lines: new Array<UILine>(),
         };
-        for (var j = 0; j < group.lines.length; ++j) {
-          let line = group.lines[j];
-          let uiLine = new UILine(line);
+        for (const line of group.lines) {
+          const uiLine = new UILine(line);
           if (line.type === 'no') {
             uiLine.oldNum = oldFrom++;
             uiLine.newNum = newFrom++;
@@ -113,20 +112,20 @@ export default class DiffComponent extends Vue {
         }
         result.push(resGroup);
       }
-      return result
+      return result;
     }
 
     public computedComments() {
-      var result: {[key:string] : any} = {};
-      for (var j = 0; j < this.commentsList.length; ++j) {
-        if (!result[this.commentsList[j].lineId]) {
-          result[this.commentsList[j].lineId] = [];
+      const result: {[key: string]: any} = {};
+      for (const comment of this.commentsList) {
+        if (!result[comment.lineId]) {
+          result[comment.lineId] = [];
         }
         // "Unexpected side effect in "comments" computed property overvise
         // TODO
-        var tmp = result[this.commentsList[j].lineId];
-        tmp.push(this.commentsList[j]);
-        result[this.commentsList[j].lineId] = tmp;
+        const tmp = result[comment.lineId];
+        tmp.push(comment);
+        result[comment.lineId] = tmp;
       }
       return result;
     }
@@ -136,13 +135,13 @@ export default class DiffComponent extends Vue {
     }
 
     public updated() {
-      var diff2htmlUi = new Diff2HtmlUI();
+      const diff2htmlUi = new Diff2HtmlUI();
       diff2htmlUi.highlightCode('#diff-content');
     }
 
     public mounted() {
       this.newCommentsShown = {};
-      var diff2htmlUi = new Diff2HtmlUI();
+      const diff2htmlUi = new Diff2HtmlUI();
       diff2htmlUi.highlightCode('#diff-content');
     }
 
