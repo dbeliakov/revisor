@@ -1,28 +1,23 @@
 <template>
   <div style="margin: 20px 40px; text-align: left;">
-    <h1>{{ review.info.name }}</h1>
-    <div v-if="review" style="" class="ui grid">
-      <div class="eight wide column" style="margin: 0px !important;">
-        <h4 style="display: inline;">Создатель:</h4> {{ review.info.owner.first_name }}
-          {{ review.info.owner.last_name }} ({{ review.info.owner.username }})<br>
-        <h4 style="display: inline;">Ревьюеры:</h4>
-          <span v-for="reviewer in review.info.reviewers" :key="reviewer.username">
-              {{reviewer.first_name}} {{reviewer.last_name}} ({{reviewer.username}})
-              <template v-if="reviewer !== review.info.reviewers[review.info.reviewers.length - 1]">,</template>
-          </span><br>
-        <template v-if="review.info.closed"><h4 style="display: inline;">Закрыто:</h4> <span v-if="review.info.accepted">Принято</span> <span v-if="!review.info.accepted">Отклонено</span><br></template>
-        <h4 style="margin-bottom: 20px; display: inline;">Обновлено:</h4> {{timeConverter(review.info.updated)}}
-      </div>
-
-      <div class="eight wide column" style="margin-top: 0px; text-align: right;">
-        <div v-if="!review.info.closed">
+    <div v-if="review" style="">
+      <h1>{{ review.info.name }}</h1>
+      <div v-if="!review.info.closed" style="margin-bottom: 15px;">
         <button v-if="review.info.owner.id === $auth.user().id" class="review-button ui primary basic button" @click="openModal">Обновить</button>
         <button v-if="review.info.owner.id !== $auth.user().id" class="review-button ui positive basic button" @click="accept()">Принять</button>
         <button class="review-button ui negative basic button" @click="decline()">Отклонить</button><br>
-        </div>
       </div>
+      <h4 style="display: inline;">Создатель:</h4> {{ review.info.owner.first_name }}
+        {{ review.info.owner.last_name }} ({{ review.info.owner.username }})<br>
+      <h4 style="display: inline;">Ревьюеры:</h4>
+        <span v-for="reviewer in review.info.reviewers" :key="reviewer.username">
+            {{reviewer.first_name}} {{reviewer.last_name}} ({{reviewer.username}})
+            <template v-if="reviewer !== review.info.reviewers[review.info.reviewers.length - 1]">,</template>
+        </span><br>
+      <template v-if="review.info.closed"><h4 style="display: inline;">Закрыто:</h4> <span v-if="review.info.accepted">Принято</span> <span v-if="!review.info.accepted">Отклонено</span><br></template>
+      <h4 style="margin-bottom: 20px; display: inline;">Обновлено:</h4> {{timeConverter(review.info.updated)}}
     </div>
-    <div style="text-align: center; margin-bottom: 20px;">
+    <div v-if="review" style="text-align: center; margin-bottom: 20px;">
       <h4 style="margin-top: 30px; margin-bottom: 10px;" v-if="review.info.revisions_count > 1 && startRev !== null && endRev !== null">
         <span v-if="startRev != endRev">revision {{startRev}} <i class="right arrow icon"></i> revision {{endRev}}</span>
         <span v-else>revision {{startRev}}</span>
@@ -259,6 +254,7 @@ h4 {
 }
 
 .review-button {
-  width: 150px;
+  width: 100px;
+  padding: 5px !important;
 }
 </style>

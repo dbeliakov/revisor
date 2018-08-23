@@ -10,7 +10,7 @@
         @saved="$emit('saved')"></CommentComponent>
 
         <NewComment
-        v-if="baseNewComment"
+        v-if="newCommentFormShown"
         class="new-comment"
         :class="{'not-first': comments.length > 0}"
         :author="$auth.user()"
@@ -35,7 +35,7 @@ import Marked from 'marked';
 })
 export default class Comments extends Vue {
     @Prop({default: []}) public readonly comments!: Comment[];
-    @Prop({default: false}) public baseNewComment!: boolean;
+    @Prop({default: false}) public newCommentFormShown!: boolean;
     @Prop({default: ''}) public readonly reviewId!: string;
     @Prop({default: ''}) public readonly lineId!: string;
 }
