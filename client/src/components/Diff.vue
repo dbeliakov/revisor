@@ -10,8 +10,8 @@
                     <template v-for="line in group.lines" >
                       <tr v-bind:key="line.id" @click="showNewCommentForm(line.id)">
                         <td class="d2h-code-linenumber" v-bind:class="{'d2h-cntx': line.type === 'no', 'd2h-ins': line.type === 'insert', 'd2h-del': line.type === 'delete'}">
-                          <div class="line-num1">{{ line.oldNum }}</div>
-                          <div class="line-num2">{{ line.newNum }}</div>
+                          <div class="line-num1" v-if="line.oldNum > 0">{{ line.oldNum }}</div>
+                          <div class="line-num2" v-if="line.newNum > 0">{{ line.newNum }}</div>
                         </td>
                         <td v-bind:class="{'d2h-cntx': line.type === 'no', 'd2h-ins': line.type === 'insert', 'd2h-del': line.type === 'delete'}">
                           <div class="d2h-code-line" v-bind:class="{'d2h-cntx': line.type === 'no', 'd2h-ins': line.type === 'insert', 'd2h-del': line.type === 'delete'}">
