@@ -39,7 +39,10 @@
                         @click="removeReviewer(reviewer)"
                         class="window close outline icon"></i></span>
           </div>
-          <FileLoader @onStartReading='onStartReadingFile' @onFinishReading='onFinishReadingFile'/>
+          <FileLoader
+            @onStartReading='onStartReadingFile'
+            @onFinishReading='onFinishReadingFile'
+            @onReadingError='onReadingError'/>
           <button class="ui fluid large blue submit button" v-bind:class="{'disabled': formDisabled}" type="submit">Создать ревью</button>
         </div>
         <div class="ui negative message" v-if="error.length > 0">{{ error }}</div>
@@ -52,6 +55,7 @@
 import {Component, Vue} from 'vue-property-decorator';
 import FileLoader from '@/components/FileLoader.vue';
 import { UserInfo } from '@/auth/user-info';
+import { error } from 'util';
 
 @Component({
     components: {FileLoader},
@@ -73,15 +77,25 @@ export default class NewReview extends Vue {
     public onFinishReadingFile(filename: string, content: string) {
         this.fileContent = content.replace(/^data:.+;base64,/, '');
         this.filename = filename;
+        this.error = '';
+        this.enableForm();
+    }
+
+    public onReadingError(error: string) {
+        this.error = error;
+        this.filename = '';
+        this.fileContent = '';
         this.enableForm();
     }
 
     public async loadReviewersList() {
         if (this.reviewerSearch.length === 0) {
             this.reviewersList = [];
+            return
         }
         const result = await this.$reviews.searchReviewers(this.reviewerSearch);
         if (result instanceof Error) {
+            alert(result);
             return;
         }
         this.reviewersList = result;
