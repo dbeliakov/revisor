@@ -142,7 +142,7 @@ func SearchUsers(query string) ([]User, error) {
 	const COUNT = 5
 
 	c := collection(s)
-	var results []User
+	var results = make([]User, 0)
 	var tmpResults []User
 	err := c.Find(bson.M{"user.login": &bson.RegEx{Pattern: query, Options: "i"}}).All(&results)
 	if err != nil {

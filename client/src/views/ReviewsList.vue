@@ -41,7 +41,7 @@
             <!--TODO-->
             <!--<i class="bug icon"></i>{{0}}-->
           </td>
-          <td class="right aligned collapsing">{{timeToString(review.updated)}}</td>
+          <td class="collapsing">{{timeToString(review.updated)}}</td>
         </tr>
       </tbody>
     </table>

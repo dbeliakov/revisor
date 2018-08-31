@@ -14,10 +14,15 @@ import {Component, Vue} from 'vue-property-decorator';
 export default class FileLoader extends Vue {
     public filename: string = 'Добавьте файл';
 
-    public updateFile(event: any): void {
+    public updateFile(event: any) {
         this.$emit('onStartReading');
 
         const file: File = event.target.files[0];
+        if (file.size > 50 * 1024) { // 50 KB
+            this.$emit('onReadingError', 'Максимальный размер файла: 50KB');
+            this.filename = 'Добавьте файл';
+            return
+        }
         const reader: FileReader = new FileReader();
         reader.onloadend = (e) => {
             this.filename = file.name;
