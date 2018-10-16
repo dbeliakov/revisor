@@ -25,6 +25,14 @@ line3
 Line4
 Line5`
 
+	diff0 = `--- test
++++ test
+@@ -1,4 +1,4 @@
+ Line1
+ Line2
+ Line3
+ Line4`
+
 	diff1 = `--- test
 +++ test
 @@ -1,4 +1,5 @@
@@ -101,7 +109,7 @@ func TestDiff(t *testing.T) {
 	diff, err := file.Diff(0, 0)
 	assert.Nil(t, err)
 	assert.Equal(t, diff.FileName, "test")
-	assert.Empty(t, diff.String())
+	assert.Equal(t, strings.TrimSpace(diff.String()), diff0)
 
 	diff, err = file.Diff(0, 1)
 	assert.Nil(t, err)

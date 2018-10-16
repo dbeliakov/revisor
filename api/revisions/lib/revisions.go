@@ -77,38 +77,41 @@ func (file File) Content() string {
 
 // VersionedFile represents file with all it's revisions
 type VersionedFile struct {
-	Name     string
-	Original File
-	Patches  []Patch
+	Name      string
+	Revisions []File
 }
 
 // NewVersionedFile constructs versioned file from content of original file
 func NewVersionedFile(name string, content []string) VersionedFile {
-	file := VersionedFile{
-		Name:     name,
-		Original: File{make([]Line, 0, len(content))},
-	}
+	startRevision := File{make([]Line, 0, len(content))}
 	for _, line := range content {
 		u, err := uuid.NewV4()
 		if err != nil {
 			logrus.Panicf("Cannot create uuid for line: %+v", err)
 		}
-		file.Original.Lines = append(file.Original.Lines, Line{Content: line, Revision: 0, ID: u.String()})
+		startRevision.Lines = append(startRevision.Lines, Line{Content: line, Revision: 0, ID: u.String()})
+	}
+	file := VersionedFile{
+		Name:      name,
+		Revisions: []File{startRevision},
 	}
 	return file
 }
 
 // RevisionsCount returns count of revisions (includes original file)
 func (file VersionedFile) RevisionsCount() int {
-	return len(file.Patches) + 1
+	return len(file.Revisions)
 }
 
 // GetRevision returns specified revision of file
 func (file *VersionedFile) GetRevision(revision int) (File, error) {
-	if revision > len(file.Patches) || revision < 0 {
-		return File{}, errors.New("Bad revision")
+	if revision >= len(file.Revisions) || revision < 0 {
+		return File{}, errors.New(
+			"Bad revision: expected from " + string(0) +
+				" to " + string(len(file.Revisions)-1) + ", got " + string(revision))
 	}
-	result := File{
+	return file.Revisions[revision], nil
+	/*result := File{
 		Lines: make([]Line, len(file.Original.Lines)),
 	}
 	copy(result.Lines, file.Original.Lines)
@@ -137,13 +140,13 @@ func (file *VersionedFile) GetRevision(revision int) (File, error) {
 			)
 		}
 	}
-	return result, nil
+	return result, nil*/
 }
 
 // AddRevision adds new revision to the versioned file
 func (file *VersionedFile) AddRevision(content []string) error {
 	revisionsCount := file.RevisionsCount()
-	lastRevision, err := file.GetRevision(len(file.Patches))
+	lastRevision, err := file.GetRevision(revisionsCount - 1)
 	if err != nil {
 		return err
 	}
@@ -151,20 +154,24 @@ func (file *VersionedFile) AddRevision(content []string) error {
 	for _, line := range lastRevision.Lines {
 		lastRevisionContent = append(lastRevisionContent, line.Content)
 	}
+	newRevision := File{
+		Lines: make([]Line, len(lastRevision.Lines)),
+	}
+	copy(newRevision.Lines, lastRevision.Lines)
+
 	m := difflib.NewMatcher(lastRevisionContent, content)
-	var patch Patch
+	origNumChanges := 0
 	for _, g := range m.GetGroupedOpCodes(0) {
 		for _, c := range g {
 			if c.Tag == 'e' {
 				continue
 			}
 			if c.Tag == 'd' || c.Tag == 'r' {
-				for i := c.I1; i < c.I2; i++ {
-					patch.Modifications = append(patch.Modifications, Modification{
-						Type:       deleteModification,
-						LineNumber: i,
-					})
-				}
+				newRevision.Lines = append(
+					newRevision.Lines[:c.I1+origNumChanges],
+					newRevision.Lines[c.I2+origNumChanges:]...,
+				)
+				origNumChanges -= (c.I2 - c.I1)
 			}
 			if c.Tag == 'i' || c.Tag == 'r' {
 				for j := c.J1; j < c.J2; j++ {
@@ -172,16 +179,18 @@ func (file *VersionedFile) AddRevision(content []string) error {
 					if err != nil {
 						logrus.Panicf("Cannot create uuid: %+v", err)
 					}
-					patch.Modifications = append(patch.Modifications, Modification{
-						Type:       insertModification,
-						LineNumber: j - 1,
-						Content:    Line{Content: content[j], Revision: revisionsCount, ID: u.String()},
-					})
+					newRevision.Lines = append(
+						newRevision.Lines[:j],
+						append(
+							[]Line{Line{Content: content[j], Revision: revisionsCount, ID: u.String()}},
+							newRevision.Lines[j:]...)...,
+					)
 				}
+				origNumChanges += (c.J2 - c.J1)
 			}
 		}
 	}
-	file.Patches = append(file.Patches, patch)
+	file.Revisions = append(file.Revisions, newRevision)
 	return nil
 }
 
