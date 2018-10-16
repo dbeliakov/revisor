@@ -69,8 +69,7 @@ func (comment Comment) Childs() ([]Comment, error) {
 
 // Save comment in database
 func (comment *Comment) Save() error {
-	s := Session.Copy()
-	defer s.Close()
+	s := Session
 
 	c := collection(s)
 	if !comment.ID.Valid() {
@@ -113,8 +112,7 @@ func (comment Comment) MarshalJSON() ([]byte, error) {
 
 // RootCommentsForReview returns comments without child comments
 func RootCommentsForReview(reviewID string) ([]Comment, error) {
-	s := Session.Copy()
-	defer s.Close()
+	s := Session
 
 	c := collection(s)
 	comments := make([]Comment, 0)
@@ -130,8 +128,7 @@ func CommentByID(id string) (Comment, error) {
 	if !bson.IsObjectIdHex(id) {
 		return Comment{}, errors.New("Invalid bson ObjectId string")
 	}
-	s := Session.Copy()
-	defer s.Close()
+	s := Session
 
 	c := collection(s)
 	var comment Comment

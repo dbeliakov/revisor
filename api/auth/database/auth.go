@@ -18,8 +18,7 @@ const (
 
 // Make 'login' field unique in database
 func init() {
-	s := Session.Copy()
-	defer s.Close()
+	s := Session
 
 	loginField := "user.login"
 
@@ -72,8 +71,7 @@ func NewUser(firstName, lastName, login, password string) (User, error) {
 
 // UserByLogin finds user in db by login
 func UserByLogin(login string) (User, error) {
-	s := Session.Copy()
-	defer s.Close()
+	s := Session
 
 	c := collection(s)
 	var user User
@@ -89,8 +87,7 @@ func UserByID(id string) (User, error) {
 	if !bson.IsObjectIdHex(id) {
 		return User{}, errors.New("Invalid bson ObjectId string")
 	}
-	s := Session.Copy()
-	defer s.Close()
+	s := Session
 
 	c := collection(s)
 	var user User
@@ -103,8 +100,7 @@ func UserByID(id string) (User, error) {
 
 // LoginIsFree checks if login is free
 func LoginIsFree(login string) bool {
-	s := Session.Copy()
-	defer s.Close()
+	s := Session
 
 	c := collection(s)
 	n, err := c.Find(bson.M{"user.login": login}).Count()
@@ -116,8 +112,7 @@ func LoginIsFree(login string) bool {
 
 // Save user info in database
 func (user *User) Save() error {
-	s := Session.Copy()
-	defer s.Close()
+	s := Session
 
 	c := collection(s)
 	if !user.ID.Valid() {
@@ -136,8 +131,7 @@ func (user *User) Save() error {
 // SearchUsers by login or name
 // TODO use indexes and text search
 func SearchUsers(query string) ([]User, error) {
-	s := Session.Copy()
-	defer s.Close()
+	s := Session
 
 	const COUNT = 5
 

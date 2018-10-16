@@ -125,8 +125,7 @@ func ReviewByID(id string) (Review, error) {
 	if !bson.IsObjectIdHex(id) {
 		return Review{}, errors.New("Invalid bson ObjectId string")
 	}
-	s := Session.Copy()
-	defer s.Close()
+	s := Session
 
 	c := collection(s)
 	var file Review
@@ -136,8 +135,7 @@ func ReviewByID(id string) (Review, error) {
 
 // ReviewsByConditions with conditions
 func ReviewsByConditions(condition bson.M) ([]Review, error) {
-	s := Session.Copy()
-	defer s.Close()
+	s := Session
 
 	c := s.DB(config.MongoDatabase).C(collectionName)
 	files := make([]Review, 0)
@@ -150,8 +148,7 @@ func ReviewsByConditions(condition bson.M) ([]Review, error) {
 
 // Save review file to database
 func (review *Review) Save() error {
-	s := Session.Copy()
-	defer s.Close()
+	s := Session
 
 	c := s.DB(config.MongoDatabase).C(collectionName)
 	if !review.ID.Valid() {
