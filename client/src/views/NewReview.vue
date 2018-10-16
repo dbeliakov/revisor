@@ -81,8 +81,8 @@ export default class NewReview extends Vue {
         this.enableForm();
     }
 
-    public onReadingError(error: string) {
-        this.error = error;
+    public onReadingError(err: string) {
+        this.error = err;
         this.filename = '';
         this.fileContent = '';
         this.enableForm();
@@ -91,7 +91,7 @@ export default class NewReview extends Vue {
     public async loadReviewersList() {
         if (this.reviewerSearch.length === 0) {
             this.reviewersList = [];
-            return
+            return;
         }
         const result = await this.$reviews.searchReviewers(this.reviewerSearch);
         if (result instanceof Error) {

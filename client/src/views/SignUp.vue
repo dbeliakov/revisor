@@ -30,7 +30,7 @@
 
             </form>
             <div class="ui message">
-                <router-link :to="{name: 'Login'}">Вход</router-link>
+                <router-link :to="{name: 'login'}">Вход</router-link>
             </div>
         </div>
     </div>

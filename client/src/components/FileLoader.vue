@@ -21,7 +21,7 @@ export default class FileLoader extends Vue {
         if (file.size > 50 * 1024) { // 50 KB
             this.$emit('onReadingError', 'Максимальный размер файла: 50KB');
             this.filename = 'Добавьте файл';
-            return
+            return;
         }
         const reader: FileReader = new FileReader();
         reader.onloadend = (e) => {

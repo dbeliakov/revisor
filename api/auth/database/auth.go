@@ -2,7 +2,6 @@ package database
 
 import (
 	"errors"
-	"log"
 	"reviewer/api/auth/lib"
 	"reviewer/api/config"
 	. "reviewer/api/database"
@@ -28,7 +27,6 @@ func init() {
 	indexes, err := c.Indexes()
 	if err != nil {
 		logrus.Warnf("Cannot get indexes: $+v. It's a new database?", err)
-		log.Print("Error while getting indexes: ", err)
 		indexes = []mgo.Index{}
 	}
 	for _, index := range indexes {
@@ -46,6 +44,8 @@ func init() {
 	err = c.EnsureIndex(index)
 	if err != nil {
 		logrus.Fatalf("Error while creating index for 'login' field: %+v", err)
+	} else {
+		logrus.Infof("Created new index for field %s", loginField)
 	}
 }
 
