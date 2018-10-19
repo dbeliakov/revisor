@@ -1,12 +1,12 @@
-package middlewares
+package auth
 
 import (
 	"context"
 	"errors"
 	"net/http"
-	"reviewer/api/auth/database"
-	"reviewer/api/auth/lib"
+	"reviewer/api/store"
 	"reviewer/api/utils"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -16,7 +16,7 @@ type authMiddlewareKey int
 
 const (
 	// keyUserID key for request context
-	keyUserID authMiddlewareKey = iota
+	keyUser authMiddlewareKey = iota
 )
 
 // AuthRequired checks jwt token and sets user_id value to request context
@@ -30,30 +30,30 @@ func AuthRequired(h http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 		tokenString := authString[bearerLength:]
-		claims, err := lib.ValidateToken(tokenString)
+		claims, err := validateToken(tokenString)
 		if err != nil {
 			logrus.Warnf("Cannot validate JWT-token: %+v", err)
 			utils.Unauthorized(w)
 			return
 		}
-		// TODO add auto updating of token
-		// Update user token if it become invalid in 1 days
-		/*if claims.VerifyExpiresAt(time.Now().Add(time.Hour*5*24).Unix(), false) {
-
-		}*/
-		h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), keyUserID, claims["id"])))
+		user := userFromToken(claims)
+		if claims.VerifyExpiresAt(time.Now().Add(5*time.Hour*24).Unix(), false) {
+			token, err := newToken(user)
+			if err != nil {
+				logrus.Errorf("Cannot create new token for user: %s, error: %+v", user.Login, err)
+			} else {
+				w.Header().Add("Authorization", "Bearer "+token)
+			}
+		}
+		h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), keyUser, user)))
 	}
 }
 
 // UserFromRequest extracts user with UserID, specified in request context
-func UserFromRequest(r *http.Request) (*database.User, error) {
-	userID := r.Context().Value(keyUserID)
-	if userID == nil {
-		return nil, errors.New("No \"keyUserID\" value in request context")
+func UserFromRequest(r *http.Request) (store.User, error) {
+	user := r.Context().Value(keyUser)
+	if user == nil {
+		return store.User{}, errors.New("No \"keyUser\" value in request context")
 	}
-	user, err := database.UserByID(userID.(string))
-	if err != nil {
-		return nil, err
-	}
-	return &user, nil
+	return user.(store.User), nil
 }
