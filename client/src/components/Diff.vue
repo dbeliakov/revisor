@@ -15,7 +15,7 @@
                         </td>
                         <td v-bind:class="{'d2h-cntx': line.type === 'no', 'd2h-ins': line.type === 'insert', 'd2h-del': line.type === 'delete'}">
                           <div class="d2h-code-line" v-bind:class="{'d2h-cntx': line.type === 'no', 'd2h-ins': line.type === 'insert', 'd2h-del': line.type === 'delete'}">
-                            <span class="d2h-code-line-ctn">{{ line.old ? line.old.content : line.new.content }}</span>
+                            <span class="d2h-code-line-ctn" v-html="line.old ? line.hOldLine : line.hNewLine"></span>
                           </div>
                         </td>
                       </tr>
@@ -43,21 +43,11 @@
 </template>
 
 <script lang="ts">
-/* tslint:disable:no-var-requires */
 import {Component, Vue, Prop, Watch} from 'vue-property-decorator';
 import { Diff, DiffLine, Line } from '@/reviews/diff';
 import Comment from '@/reviews/comment';
 import Comments from '@/components/Comments.vue';
-import 'diff2html/dist/diff2html-ui.js';
-// TODO use ts versions
-const jQuery = require('jquery');
-require('diff2html/dist/diff2html-ui.js');
-const hljs = require('highlightjs');
-
-(window as any).$ = jQuery;
-(window as any).jQuery = jQuery;
-(window as any).hljs = hljs;
-declare var Diff2HtmlUI: any;
+import hljs from 'highlightjs';
 
 class UILine {
   public oldNum: number = 0;
@@ -67,6 +57,9 @@ class UILine {
   public old: Line | undefined;
   public new: Line | undefined;
   public type: string;
+
+  public hOldLine: string | undefined;
+  public hNewLine: string | undefined;
 
   constructor(line: DiffLine) {
     this.old = line.old;
@@ -87,6 +80,8 @@ export default class DiffComponent extends Vue {
 
   public computedGroups() {
       const result = [];
+      let oldContinuation;
+      let newContinuation;
       for (let i = 0; i < this.diff.groups.length; ++i) {
         const group = this.diff.groups[i];
         let oldFrom = group.oldRange.from + 1;
@@ -97,6 +92,16 @@ export default class DiffComponent extends Vue {
         };
         for (const line of group.lines) {
           const uiLine = new UILine(line);
+          if (uiLine.old) {
+            const hLine = hljs.highlight(this.fileExt(), uiLine.old.content, true, oldContinuation);
+            uiLine.hOldLine = hLine.value;
+            oldContinuation = hLine.top;
+          }
+          if (uiLine.new) {
+            const hLine = hljs.highlight(this.fileExt(), uiLine.new.content, true, newContinuation);
+            uiLine.hNewLine = hLine.value;
+            newContinuation = hLine.top;
+          }
           if (line.type === 'no') {
             uiLine.oldNum = oldFrom++;
             uiLine.newNum = newFrom++;
@@ -130,19 +135,12 @@ export default class DiffComponent extends Vue {
       return result;
     }
 
-    public fileExt() {
-        return this.diff.filename.split('.').pop();
-    }
-
-    public updated() {
-      const diff2htmlUi = new Diff2HtmlUI();
-      diff2htmlUi.highlightCode('#diff-content');
+    public fileExt(): string {
+        return this.diff.filename.split('.').pop() as string;
     }
 
     public mounted() {
       this.newCommentsShown = {};
-      const diff2htmlUi = new Diff2HtmlUI();
-      diff2htmlUi.highlightCode('#diff-content');
     }
 
     public showNewCommentForm(lineId: string) {
