@@ -8,10 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/pmezard/go-difflib/difflib"
 	uuid "github.com/satori/go.uuid"
+	"github.com/sirupsen/logrus"
 )
 
 type modificationType int
@@ -38,18 +37,6 @@ type Line struct {
 	Content  string `json:"content"`
 	Revision int    `json:"revision"`
 	ID       string `json:"id"`
-}
-
-// Modification represents changes to get next revision of file
-type Modification struct {
-	Type       modificationType
-	LineNumber int
-	Content    Line
-}
-
-// Patch is a set of modifications to get next revision
-type Patch struct {
-	Modifications []Modification
 }
 
 // File represents lines of file with revision numbers
@@ -111,36 +98,6 @@ func (file *VersionedFile) GetRevision(revision int) (File, error) {
 				" to " + string(len(file.Revisions)-1) + ", got " + string(revision))
 	}
 	return file.Revisions[revision], nil
-	/*result := File{
-		Lines: make([]Line, len(file.Original.Lines)),
-	}
-	copy(result.Lines, file.Original.Lines)
-	for i := 1; i <= revision; i++ {
-		patch := file.Patches[i-1]
-		removed := 0
-		for _, mod := range patch.Modifications {
-			if mod.Type != deleteModification {
-				continue
-			}
-			result.Lines = append(
-				result.Lines[:mod.LineNumber-removed],
-				result.Lines[mod.LineNumber+1-removed:]...,
-			)
-			removed++
-		}
-		for _, mod := range patch.Modifications {
-			if mod.Type != insertModification {
-				continue
-			}
-			result.Lines = append(
-				result.Lines[:mod.LineNumber+1],
-				append(
-					[]Line{mod.Content},
-					result.Lines[mod.LineNumber+1:]...)...,
-			)
-		}
-	}
-	return result, nil*/
 }
 
 // AddRevision adds new revision to the versioned file
