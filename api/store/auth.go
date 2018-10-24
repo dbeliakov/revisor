@@ -1,8 +1,8 @@
 package store
 
 import (
+	"bytes"
 	"encoding/json"
-	"strings"
 
 	"github.com/boltdb/bolt"
 	"github.com/pkg/errors"
@@ -18,12 +18,11 @@ type User struct {
 
 // AuthStore provides access to auth module storage
 type AuthStore interface {
-	CreateBuckets() error
-
 	FindUserByLogin(login string) (User, error)
 	CreateUser(user User) error
 	UpdateUser(user User) error
 	FindUsers(query string) ([]User, error)
+	CheckExists(login string) (bool, error)
 }
 
 var (
@@ -33,35 +32,21 @@ var (
 	usersBucket           = []byte("users")
 	searchFirstNameBucket = []byte("users-first-name")
 	searchLastNameBucket  = []byte("users-last-name")
-	loginListSeparator    = ","
+	loginListSeparator    = []byte(",")
+	searchUsersCount      = 5
 )
 
-type storeImpl struct {
+type authStoreImpl struct {
 	db *bolt.DB
 }
 
 func newAuthStore(db *bolt.DB) AuthStore {
-	return storeImpl{db: db}
+	store := authStoreImpl{db: db}
+	createBuckets(store.db, [][]byte{usersBucket, searchFirstNameBucket, searchLastNameBucket})
+	return store
 }
 
-func (s storeImpl) CreateBuckets() error {
-	buckets := [][]byte{usersBucket, searchFirstNameBucket, searchLastNameBucket}
-	err := s.db.Update(func(tx *bolt.Tx) error {
-		for _, b := range buckets {
-			_, err := tx.CreateBucketIfNotExists(b)
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s storeImpl) FindUserByLogin(login string) (User, error) {
+func (s authStoreImpl) FindUserByLogin(login string) (User, error) {
 	var user User
 	err := s.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(usersBucket)
@@ -77,7 +62,16 @@ func (s storeImpl) FindUserByLogin(login string) (User, error) {
 	return user, nil
 }
 
-func (s storeImpl) CreateUser(user User) error {
+func (s authStoreImpl) CheckExists(login string) (res bool, err error) {
+	err = s.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(usersBucket)
+		res = b.Get([]byte(login)) != nil
+		return nil
+	})
+	return
+}
+
+func (s authStoreImpl) CreateUser(user User) error {
 	err := s.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(usersBucket)
 		if b.Get([]byte(user.Login)) != nil {
@@ -97,11 +91,17 @@ func (s storeImpl) CreateUser(user User) error {
 	return nil
 }
 
-func (s storeImpl) UpdateUser(user User) error {
+// TODO only for password changing now
+func (s authStoreImpl) UpdateUser(user User) error {
 	err := s.db.Update(func(tx *bolt.Tx) error {
-		err := putUser(tx, user)
+		b := tx.Bucket(usersBucket)
+		serialized, err := json.Marshal(user)
 		if err != nil {
-			return errors.Wrap(err, "Cannot put user")
+			return errors.Wrap(err, "Cannot serialize user")
+		}
+		err = b.Put([]byte(user.Login), serialized)
+		if err != nil {
+			return errors.Wrap(err, "Cannot update user")
 		}
 		return nil
 	})
@@ -111,9 +111,50 @@ func (s storeImpl) UpdateUser(user User) error {
 	return nil
 }
 
-func (s storeImpl) FindUsers(query string) ([]User, error) {
-	// TODO
-	return nil, nil
+func (s authStoreImpl) FindUsers(query string) ([]User, error) {
+	result := make([]User, 0)
+	err := s.db.View(func(tx *bolt.Tx) error {
+		users := tx.Bucket(usersBucket)
+		c := users.Cursor()
+		prefix := []byte(query)
+		for k, v := c.Seek(prefix); k != nil &&
+			bytes.HasPrefix(k, prefix) && len(result) < searchUsersCount; k, v = c.Next() {
+			result = append(result, User{})
+			err := json.Unmarshal(v, &result[len(result)-1])
+			if err != nil {
+				return errors.Wrap(err, "Cannot deserialize user")
+			}
+		}
+
+		addResults := func(c *bolt.Cursor) error {
+			for k, v := c.Seek(prefix); k != nil &&
+				bytes.HasPrefix(k, prefix) && len(result) < searchUsersCount; k, v = c.Next() {
+				logins := bytes.Split(v, []byte(loginListSeparator))
+				for _, login := range logins {
+					result = append(result, User{})
+					err := json.Unmarshal(users.Get(login), &result[len(result)-1])
+					if err != nil {
+						return errors.Wrap(err, "Cannot deserialize user")
+					}
+				}
+			}
+			return nil
+		}
+		err := addResults(tx.Bucket(searchLastNameBucket).Cursor())
+		if err != nil {
+			return err
+		}
+		err = addResults(tx.Bucket(searchFirstNameBucket).Cursor())
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func putUser(tx *bolt.Tx, user User) error {
@@ -132,9 +173,13 @@ func putUser(tx *bolt.Tx, user User) error {
 		if list == nil {
 			list = make([]byte, 0)
 		}
-		list = []byte(strings.Join(
-			append(strings.Split(string(list), loginListSeparator), user.Login),
-			loginListSeparator))
+		splitted := make([][]byte, 0)
+		if list != nil && len(list) > 0 {
+			splitted = bytes.Split(list, loginListSeparator)
+		}
+		list = bytes.Join(
+			append(splitted, []byte(user.Login)),
+			loginListSeparator)
 		err := b.Put([]byte(key), list)
 		if err != nil {
 			return err

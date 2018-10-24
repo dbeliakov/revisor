@@ -9,6 +9,22 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// APIUser represents api result struct
+type APIUser struct {
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Login     string `json:"username"`
+}
+
+// NewAPIUser creates new api user from store user
+func NewAPIUser(u store.User) APIUser {
+	return APIUser{
+		FirstName: u.FirstName,
+		LastName:  u.LastName,
+		Login:     u.Login,
+	}
+}
+
 var checkLogin = regexp.MustCompile(`^[a-zA-Z0-9\-_]+$`).MatchString
 
 // LoginHandler checks username and password and returns jwt on success
@@ -21,7 +37,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := store.Store.Auth.FindUserByLogin(form.Username)
+	user, err := store.Auth.FindUserByLogin(form.Username)
 	if err != nil {
 		logrus.Infof("Cannot find user with such login: %s, error: %+v", form.Username, err)
 		utils.Error(w, utils.JSONErrorResponse{
@@ -78,7 +94,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 		utils.Error(w, utils.InternalErrorResponse("Cannot create new user"))
 		return
 	}
-	err = store.Store.Auth.CreateUser(user)
+	err = store.Auth.CreateUser(user)
 	if err == store.ErrUserExists {
 		logrus.Infof("Login is not free: %s", form.Username)
 		utils.Error(w, utils.JSONErrorResponse{
@@ -104,16 +120,17 @@ var UserInfoHandler = AuthRequired(func(w http.ResponseWriter, r *http.Request) 
 		utils.Error(w, utils.InternalErrorResponse("No authorized user for this request"))
 		return
 	}
-
-	utils.Ok(w, user)
+	user.PasswordHash = ""
+	utils.Ok(w, NewAPIUser(user))
 })
 
 // ChangePasswordHandler changes user password
 var ChangePasswordHandler = AuthRequired(func(w http.ResponseWriter, r *http.Request) {
 	user, err := UserFromRequest(r)
 	if err != nil {
-		logrus.Error("Error while getting user from request context: %+v", err)
+		logrus.Errorf("Error while getting user from request context: %+v", err)
 		utils.Error(w, utils.InternalErrorResponse("No authorized user for this request"))
+		return
 	}
 
 	var form struct {
@@ -125,9 +142,9 @@ var ChangePasswordHandler = AuthRequired(func(w http.ResponseWriter, r *http.Req
 	}
 
 	// Load from database user with password hash
-	user, err = store.Store.Auth.FindUserByLogin(user.Login)
+	user, err = store.Auth.FindUserByLogin(user.Login)
 	if err != nil {
-		logrus.Error("Error while getting user from database: %+v", err)
+		logrus.Errorf("Error while getting user from database: %+v", err)
 		utils.Error(w, utils.InternalErrorResponse("No authorized user for this request"))
 		return
 	}
@@ -139,7 +156,7 @@ var ChangePasswordHandler = AuthRequired(func(w http.ResponseWriter, r *http.Req
 			utils.Error(w, utils.InternalErrorResponse("Cannot store password"))
 			return
 		}
-		err = store.Store.Auth.UpdateUser(user)
+		err = store.Auth.UpdateUser(user)
 		if err != nil {
 			logrus.Errorf("Cannot save new password for user: %s, error: %+v", user.Login, err)
 			utils.Error(w, utils.InternalErrorResponse("Cannot store password"))

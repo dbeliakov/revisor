@@ -4,7 +4,9 @@ import (
 	"net/http"
 	"os"
 	"reviewer/api/auth"
+	"reviewer/api/comments"
 	"reviewer/api/config"
+	"reviewer/api/revisions"
 
 	gh "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -19,17 +21,17 @@ func addAPIHandlers(base string, r *mux.Router) {
 	r.HandleFunc(base+"/auth/change/password", auth.ChangePasswordHandler).Methods("POST")
 
 	// Review handlers
-	/*r.HandleFunc(base+"/reviews/outgoing", revisions.OutgoingReviews).Methods("GET")
+	r.HandleFunc(base+"/reviews/outgoing", revisions.OutgoingReviews).Methods("GET")
 	r.HandleFunc(base+"/reviews/incoming", revisions.IncomingReviews).Methods("GET")
 	r.HandleFunc(base+"/reviews/new", revisions.NewReview).Methods("POST")
 	r.HandleFunc(base+"/reviews/{id}", revisions.Review).Methods("GET")
 	r.HandleFunc(base+"/reviews/{id}/update", revisions.UpdateReview).Methods("POST")
 	r.HandleFunc(base+"/reviews/{id}/accept", revisions.Accept).Methods("GET")
 	r.HandleFunc(base+"/reviews/{id}/decline", revisions.Decline).Methods("GET")
-	r.HandleFunc(base+"/users/search", revisions.SearchReviewer).Methods("GET")*/
+	r.HandleFunc(base+"/users/search", revisions.SearchReviewer).Methods("GET")
 
 	// Comments handlers
-	/*r.HandleFunc(base+"/comments/add", comments.AddComment).Methods("POST")*/
+	r.HandleFunc(base+"/comments/add", comments.AddComment).Methods("POST")
 }
 
 func addClientFilesHandlers(r *mux.Router) {
