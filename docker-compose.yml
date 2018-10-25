@@ -3,7 +3,7 @@ version: '2'
 services:
     service:
         restart: always
-        image: dbeliakov/revisor:0.1
+        image: registry.gitlab.dbeliakov.ru/dbeliakov/revisor:latest
         networks:
         - private
         - web

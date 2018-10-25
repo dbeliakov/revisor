@@ -18,8 +18,8 @@ def deploy():
         with open('config.env', 'w') as f:
             f.write('DEBUG=0\n')
             f.write('SECRET_KEY=' + os.getenv('SECRET_KEY') + '\n')
-            f.write('CLIENT_FILES_DIR=./client')
-            f.write('DATABASE_FILE=/revisor.db')
+            f.write('CLIENT_FILES_DIR=./client\n')
+            f.write('DATABASE_FILE=/revisor.db\n')
 
     def docker_compose(command):
         with cd(PATH):
