@@ -1,11 +1,10 @@
-package revisions
+package review
 
 import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"reviewer/api/auth"
-	"reviewer/api/revisions/lib"
 	"reviewer/api/store"
 	"reviewer/api/utils"
 	"strconv"
@@ -211,7 +210,7 @@ var NewReview = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	file := lib.NewVersionedFile(form.FileName, difflib.SplitLines(string(fileContent)))
+	file := NewVersionedFile(form.FileName, difflib.SplitLines(string(fileContent)))
 	bytesFile, err := json.Marshal(&file)
 	if err != nil {
 		logrus.Errorf("Cannot serialize versioned file: %+v", err)
@@ -257,7 +256,7 @@ var Review = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	var file lib.VersionedFile
+	var file VersionedFile
 	err = json.Unmarshal(review.File, &file)
 	if err != nil {
 		logrus.Errorf("Error while deserializing versioned file: %+v", err)
@@ -424,7 +423,7 @@ var UpdateReview = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request
 	}
 	review.Reviewers = reviewers
 
-	var file lib.VersionedFile
+	var file VersionedFile
 	err = json.Unmarshal(review.File, &file)
 	if err != nil {
 		logrus.Errorf("Error while deserializing versioned file: %+v", err)

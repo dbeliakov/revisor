@@ -1,11 +1,10 @@
-package lib
+package review
 
 import (
 	"strings"
 	"testing"
 
 	"github.com/pmezard/go-difflib/difflib"
-
 	"github.com/stretchr/testify/assert"
 )
 
