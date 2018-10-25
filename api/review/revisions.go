@@ -10,7 +10,6 @@ import (
 
 	"github.com/pmezard/go-difflib/difflib"
 	uuid "github.com/satori/go.uuid"
-	"github.com/sirupsen/logrus"
 )
 
 type modificationType int
@@ -72,10 +71,7 @@ type VersionedFile struct {
 func NewVersionedFile(name string, content []string) VersionedFile {
 	startRevision := File{make([]Line, 0, len(content))}
 	for _, line := range content {
-		u, err := uuid.NewV4()
-		if err != nil {
-			logrus.Panicf("Cannot create uuid for line: %+v", err)
-		}
+		u := uuid.NewV4()
 		startRevision.Lines = append(startRevision.Lines, Line{Content: line, Revision: 0, ID: u.String()})
 	}
 	file := VersionedFile{
@@ -132,10 +128,7 @@ func (file *VersionedFile) AddRevision(content []string) error {
 			}
 			if c.Tag == 'i' || c.Tag == 'r' {
 				for j := c.J1; j < c.J2; j++ {
-					u, err := uuid.NewV4()
-					if err != nil {
-						logrus.Panicf("Cannot create uuid: %+v", err)
-					}
+					u := uuid.NewV4()
 					newRevision.Lines = append(
 						newRevision.Lines[:j],
 						append(
