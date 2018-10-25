@@ -8,8 +8,6 @@ import (
 )
 
 var (
-	MongoAddr      = "localhost:27017"
-	MongoDatabase  = "revisor"
 	Debug          = false
 	SecretKey      = "SECRET_KEY"
 	ClientFilesDir = "./client"
@@ -36,8 +34,6 @@ func updateBoolFromEnv(val *bool, key string) {
 }
 
 func init() {
-	updateFromEnv(&MongoAddr, "MONGO_ADDR")
-	updateFromEnv(&MongoDatabase, "MONGO_DATABASE")
 	updateBoolFromEnv(&Debug, "DEBUG")
 	updateFromEnv(&SecretKey, "SECRET_KEY")
 	updateFromEnv(&ClientFilesDir, "CLIENT_FILES_DIR")

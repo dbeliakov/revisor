@@ -31,13 +31,13 @@ build:
     - docker build -t registry.gitlab.dbeliakov.ru/dbeliakov/revisor:latest -t registry.gitlab.dbeliakov.ru/dbeliakov/revisor:build$CI_PIPELINE_ID --no-cache .
     - docker push registry.gitlab.dbeliakov.ru/dbeliakov/revisor
 
-#deploy:
-#    stage: deploy
-#    before_script:
-#    - eval $(ssh-agent -s)
-#    - bash -c 'ssh-add <(echo "$DEPLOY_KEY")'
-#    - mkdir -p ~/.ssh
-#    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config 
-#    script:
-#    - fab -H $DEPLOY_ADDR deploy
+deploy:
+    stage: deploy
+    before_script:
+    - eval $(ssh-agent -s)
+    - bash -c 'ssh-add <(echo "$DEPLOY_KEY")'
+    - mkdir -p ~/.ssh
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config 
+    script:
+    - fab -H $DEPLOY_ADDR deploy
 
