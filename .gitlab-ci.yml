@@ -3,7 +3,7 @@ image: dbeliakov/gitlab-ci-go-npm-env:latest
 stages:
 - test
 - build
-#- deploy
+- deploy
 
 test:
     stage: test
