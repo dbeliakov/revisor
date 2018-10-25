@@ -6,7 +6,7 @@ from fabric.contrib.files import append
 from fabric.contrib.project import rsync_project
 import os
 
-env.user = 'root'
+env.user = 'dbeliakov'
 env.abort_on_prompts = True
 PATH = '/home/dbeliakov/docker/revisor/'
 
@@ -23,9 +23,9 @@ def deploy():
 
     def docker_compose(command):
         with cd(PATH):
-            run('set -o pipefail; docker-compose %s | tee' % command)
+            run('set -o pipefail; sudo docker-compose %s | tee' % command)
 
-    run('docker login -u %s -p %s %s' % (os.getenv('REGISTRY_USER',
+    run('sudo docker login -u %s -p %s %s' % (os.getenv('REGISTRY_USER',
                                                    'gitlab-ci-token'),
                                          os.getenv('CI_BUILD_TOKEN'),
                                          os.getenv('CI_REGISTRY',
