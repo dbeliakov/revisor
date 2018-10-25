@@ -7,8 +7,6 @@ services:
         networks:
         - private
         - web
-        depends_on:
-        - database
         ports:
         - 8080:80
         labels:
@@ -16,7 +14,7 @@ services:
         - "traefik.backend=revisor.dbeliakov.ru"
         - "traefik.frontend.rule=Host:revisor.dbeliakov.ru"
         - "traefik.docker.network=traefikproxy_webgateway"
-        evn_file:
+        env_file:
         - config.env
         volumes:
         - /srv/docker/revisor/database/revisor.db:/revisor.db
@@ -25,7 +23,6 @@ networks:
     web:
         external:
             name: traefikproxy_webgateway
-        driver: bridge
     private:
         driver: bridge
 
