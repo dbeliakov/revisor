@@ -36,11 +36,11 @@ export function userAvatarColor(user: UserInfo) {
         '#33FF99', '#CCCC33', '#99CC33'];
 
     let hash = 0;
-    if (user.id.length === 0) {
+    if (user.username.length === 0) {
         return avatarColors[0];
     }
-    for (let i = 0; i < user.id.length; i++) {
-        const c = user.id.charCodeAt(i);
+    for (let i = 0; i < user.username.length; i++) {
+        const c = user.username.charCodeAt(i);
         hash = ((hash << 5) - hash) + c;
         hash |= 0; // Convert to 32bit integer
     }

@@ -1,6 +1,8 @@
-package lib
+package auth
 
 import (
+	"reviewer/api/store"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -8,21 +10,13 @@ const (
 	hashCost = 8
 )
 
-// User represents information about registered user
-type User struct {
-	FirstName    string `json:"first_name"`
-	LastName     string `json:"last_name"`
-	Login        string `json:"username"`
-	PasswordHash string `json:"-"`
-}
-
 // NewUser creates new user object
-func NewUser(firstName, lastName, login, password string) (User, error) {
+func newUser(firstName, lastName, login, password string) (store.User, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), hashCost)
 	if err != nil {
-		return User{}, err
+		return store.User{}, err
 	}
-	return User{
+	return store.User{
 		FirstName:    firstName,
 		LastName:     lastName,
 		Login:        login,
@@ -31,12 +25,12 @@ func NewUser(firstName, lastName, login, password string) (User, error) {
 }
 
 // CheckPassword compares password with PasswordHash
-func (user User) CheckPassword(password string) bool {
+func checkPassword(user store.User, password string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)) == nil
 }
 
 // SetPassword new password
-func (user *User) SetPassword(password string) error {
+func setPassword(user *store.User, password string) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), hashCost)
 	if err != nil {
 		return err

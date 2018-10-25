@@ -8,10 +8,9 @@ import (
 	"reviewer/api/config"
 	"reviewer/api/revisions"
 
-	"github.com/sirupsen/logrus"
-
 	gh "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 )
 
 func addAPIHandlers(base string, r *mux.Router) {
@@ -45,7 +44,7 @@ func main() {
 	addClientFilesHandlers(r)
 
 	handler := gh.CombinedLoggingHandler(os.Stdout, r)
-    listenAddres := "[::]:80"
+	listenAddres := "[::]:80"
 
 	if config.Debug {
 		handler = gh.CORS(
@@ -54,7 +53,7 @@ func main() {
 			gh.AllowedHeaders([]string{"Content-Type", "Authorization"}),
 			gh.ExposedHeaders([]string{"Authorization"}),
 		)(handler)
-        listenAddres = "[::]:8090"
+		listenAddres = "[::]:8090"
 	}
 	err := http.ListenAndServe(listenAddres, handler)
 	if err != nil {
