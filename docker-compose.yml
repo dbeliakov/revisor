@@ -1,14 +1,6 @@
 version: '2'
 
 services:
-    database:
-        restart: always
-        image: mongo
-        networks:
-        - private
-#        volumes:
-#        - /srv/docker/you-podcast/mongo:/data/db
-
     service:
         restart: always
         image: dbeliakov/revisor:0.1
@@ -19,19 +11,20 @@ services:
         - database
         ports:
         - 8080:80
-#        labels:
-#        - "traefik.enable=true"
-#        - "traefik.backend=revisor.dbeliakov.ru"
-#        - "traefik.frontend.rule=Host:revisor.dbeliakov.ru"
-#        - "traefik.docker.network=traefikproxy_webgateway"
-        environment:
-        - MONGO_ADDR=database:27017
-        - MONGO_DATABASE=revisor
+        labels:
+        - "traefik.enable=true"
+        - "traefik.backend=revisor.dbeliakov.ru"
+        - "traefik.frontend.rule=Host:revisor.dbeliakov.ru"
+        - "traefik.docker.network=traefikproxy_webgateway"
+        evn_file:
+        - config.env
+        volumes:
+        - /srv/docker/revisor/database/revisor.db:/revisor.db
 
 networks:
     web:
-#        external:
-#            name: traefikproxy_webgateway
+        external:
+            name: traefikproxy_webgateway
         driver: bridge
     private:
         driver: bridge
