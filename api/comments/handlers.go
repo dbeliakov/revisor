@@ -2,19 +2,21 @@ package comments
 
 import (
 	"net/http"
-	"reviewer/api/auth/middlewares"
-	"reviewer/api/comments/database"
+	"reviewer/api/auth"
+	"reviewer/api/store"
 	"reviewer/api/utils"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
 
 // AddComment to line of review
-var AddComment = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
-	user, err := middlewares.UserFromRequest(r)
+var AddComment = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
+	user, err := auth.UserFromRequest(r)
 	if err != nil {
-		logrus.Error("Error while getting user from request context: %+v", err)
+		logrus.Errorf("Error while getting user from request context: %+v", err)
 		utils.Error(w, utils.InternalErrorResponse("No authorized user for this request"))
+		return
 	}
 
 	var form struct {
@@ -27,11 +29,16 @@ var AddComment = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	var parent *database.Comment = nil
-	if form.Parent != "" {
-		logrus.Info("Parent id: " + form.Parent)
-		p, err := database.CommentByID(form.Parent)
-		if err != nil {
+	comment := store.Comment{
+		Author:   user.Login,
+		Created:  time.Now().Unix(),
+		Text:     form.Text,
+		ParentID: form.Parent,
+		LineID:   form.LineID,
+	}
+
+	if len(form.Parent) > 0 {
+		if exists, err := store.Comments.CheckExists(form.ReviewID, comment.ParentID); err != nil || !exists {
 			logrus.Warnf("Cannot find parent comment: %+v", err)
 			utils.Error(w, utils.JSONErrorResponse{
 				Status:        http.StatusBadRequest,
@@ -40,24 +47,11 @@ var AddComment = middlewares.AuthRequired(func(w http.ResponseWriter, r *http.Re
 			})
 			return
 		}
-		parent = &p
 	}
-
-	comment := database.NewComment(user.ID.Hex(), form.Text, form.ReviewID, form.LineID, parent == nil)
-	err = comment.Save()
+	err = store.Comments.CreateComment(form.ReviewID, &comment)
 	if err != nil {
 		logrus.Errorf("Cannot save new comment: %+v", err)
 		utils.Error(w, utils.InternalErrorResponse("Cannot save comment to database"))
-		return
-	}
-
-	if parent != nil {
-		parent.ChildIDs = append(parent.ChildIDs, comment.ID)
-		err = parent.Save()
-	}
-	if err != nil {
-		logrus.Errorf("Cannot save parent comment: %+v", err)
-		utils.Error(w, utils.InternalErrorResponse("Cannot update parent comment"))
 		return
 	}
 

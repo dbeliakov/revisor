@@ -7,9 +7,13 @@ import (
 	"net/http"
 
 	"github.com/sirupsen/logrus"
-
 	validator "gopkg.in/go-playground/validator.v9"
 )
+
+// APIResponse struct to prevent incorrect data in response
+type APIResponse interface {
+	Check()
+}
 
 // JSONErrorResponse presents general structure of error response
 type JSONErrorResponse struct {

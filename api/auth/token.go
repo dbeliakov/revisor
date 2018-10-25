@@ -1,9 +1,10 @@
-package lib
+package auth
 
 import (
 	"errors"
 	"fmt"
 	"reviewer/api/config"
+	"reviewer/api/store"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -13,14 +14,21 @@ var (
 	signingKey = []byte(config.SecretKey)
 )
 
-// NewToken generates new JWT token
-func (user *User) NewToken(id string) (string, error) {
+const (
+	firstNameKey = "first_name"
+	lastNameKey  = "last_name"
+	loginKey     = "login"
+	expiredTTL   = 7 * 24 * time.Hour
+	refreshTTL   = 5 * 24 * time.Hour
+)
+
+// NewToken generates new JWT token for user
+func newToken(user store.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":         id,
-		"first_name": user.FirstName,
-		"last_name":  user.LastName,
-		"login":      user.Login,
-		"exp":        time.Now().Add(time.Hour * 24 * 7).Unix(),
+		firstNameKey: user.FirstName,
+		lastNameKey:  user.LastName,
+		loginKey:     user.Login,
+		"exp":        time.Now().Add(expiredTTL).Unix(),
 	})
 	tokenString, err := token.SignedString(signingKey)
 	if err != nil {
@@ -30,7 +38,7 @@ func (user *User) NewToken(id string) (string, error) {
 }
 
 // ValidateToken from user
-func ValidateToken(tokenString string) (jwt.MapClaims, error) {
+func validateToken(tokenString string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
@@ -46,4 +54,13 @@ func ValidateToken(tokenString string) (jwt.MapClaims, error) {
 		return claims, nil
 	}
 	return jwt.MapClaims{}, errors.New("Token is not valid")
+}
+
+// UserFromToken builds user object using information in token claims
+func userFromToken(claims jwt.MapClaims) store.User {
+	return store.User{
+		FirstName: claims[firstNameKey].(string),
+		LastName:  claims[lastNameKey].(string),
+		Login:     claims[loginKey].(string),
+	}
 }
