@@ -24,6 +24,7 @@ build:
     - go build
     - cd ../client
     - npm install
+    - mv node_modules/@types/highlight.js node_modules/@types/highlightjs
     - npm run build
     - cd ../
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.gitlab.dbeliakov.ru
