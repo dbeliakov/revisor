@@ -15,7 +15,7 @@ services:
         env_file:
         - config.env
         volumes:
-        - /srv/docker/revisor/database:/database/revisor.db
+        - /srv/docker/revisor/database:/database/
 
 networks:
     web:
