@@ -20,7 +20,7 @@ services:
 networks:
     web:
         external:
-            name: traefikproxy_webgateway
+            name: traefik_webgateway
     private:
         driver: bridge
 
