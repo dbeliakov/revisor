@@ -9,8 +9,6 @@ const axios = Axios.create({
   baseURL: process.env.VUE_APP_API_URL,
 });
 
-console.log(process.env)
-
 Vue.config.productionTip = false;
 
 Vue.use(AuthPlugin, {axios, router});
