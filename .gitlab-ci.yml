@@ -9,8 +9,7 @@ test:
     stage: test
     script:
     - export GOPATH=/go-build
-    - mkdir -p $GOPATH
-    - mkdir -p $GOPATH/src/reviewer
+    - mkdir -p $GOPATH/src/
     - ln -s `pwd` $GOPATH/src/reviewer
     - cd $GOPATH/src/reviewer/api
     - go test ./...
@@ -19,8 +18,7 @@ build:
     stage: build
     script:
     - export GOPATH=/go-build
-    - mkdir -p $GOPATH
-    - mkdir -p $GOPATH/src/reviewer
+    - mkdir -p $GOPATH/src/
     - ln -s `pwd` $GOPATH/src/reviewer
     - cd $GOPATH/src/reviewer/api
     - go build
