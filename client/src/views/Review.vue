@@ -2,11 +2,6 @@
   <div style="margin: 20px 40px; text-align: left;">
     <div v-if="review" style="">
       <h1>{{ review.info.name }}</h1>
-      <div v-if="!review.info.closed" style="margin-bottom: 15px;">
-        <button v-if="review.info.owner.id === $auth.user().id" class="review-button ui primary basic button" @click="openModal">Обновить</button>
-        <button v-if="review.info.owner.id !== $auth.user().id" class="review-button ui positive basic button" @click="accept()">Принять</button>
-        <button class="review-button ui negative basic button" @click="decline()">Отклонить</button><br>
-      </div>
       <h4 style="display: inline;">Создатель:</h4> {{ review.info.owner.first_name }}
         {{ review.info.owner.last_name }} ({{ review.info.owner.username }})<br>
       <h4 style="display: inline;">Ревьюеры:</h4>
@@ -14,8 +9,13 @@
             {{reviewer.first_name}} {{reviewer.last_name}} ({{reviewer.username}})
             <template v-if="reviewer !== review.info.reviewers[review.info.reviewers.length - 1]">,</template>
         </span><br>
-      <template v-if="review.info.closed"><h4 style="display: inline;">Закрыто:</h4> <span v-if="review.info.accepted">Принято</span> <span v-if="!review.info.accepted">Отклонено</span><br></template>
-      <h4 style="margin-bottom: 20px; display: inline;">Обновлено:</h4> {{timeConverter(review.info.updated)}}
+      <template v-if="review.info.closed"><h4 style="display: inline;">Закрыто:</h4> <span v-if="review.info.accepted"> Принято</span> <span v-if="!review.info.accepted"> Отклонено</span><br></template>
+      <span><h4 style="display: inline;">Обновлено:</h4> {{timeConverter(review.info.updated)}}</span>
+      <div v-if="!review.info.closed" style="margin-top: 20px;">
+        <button v-if="review.info.owner.id === $auth.user().id" class="review-button ui primary basic button" @click="openModal">Обновить</button>
+        <button v-if="review.info.owner.id !== $auth.user().id" class="review-button ui positive basic button" @click="accept()">Принять</button>
+        <button class="review-button ui negative basic button" @click="decline()">Отклонить</button><br>
+      </div>
     </div>
     <div v-if="review" style="text-align: center; margin-bottom: 20px;">
       <h4 style="margin-top: 30px; margin-bottom: 10px;" v-if="review.info.revisions_count > 1 && startRev !== null && endRev !== null">

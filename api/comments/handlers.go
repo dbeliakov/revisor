@@ -30,15 +30,15 @@ var AddComment = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) 
 	}
 
 	comment := store.Comment{
-		Author:  user.Login,
-		Created: time.Now().Unix(),
-		Text:    form.Text,
-		ParetID: form.Parent,
-		LineID:  form.LineID,
+		Author:   user.Login,
+		Created:  time.Now().Unix(),
+		Text:     form.Text,
+		ParentID: form.Parent,
+		LineID:   form.LineID,
 	}
 
 	if len(form.Parent) > 0 {
-		if exists, err := store.Comments.CheckExists(form.ReviewID, comment.ParetID); err != nil || !exists {
+		if exists, err := store.Comments.CheckExists(form.ReviewID, comment.ParentID); err != nil || !exists {
 			logrus.Warnf("Cannot find parent comment: %+v", err)
 			utils.Error(w, utils.JSONErrorResponse{
 				Status:        http.StatusBadRequest,

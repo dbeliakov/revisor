@@ -41,7 +41,7 @@ type APIReview struct {
 	Owner          auth.APIUser   `json:"owner"`
 	Reviewers      []auth.APIUser `json:"reviewers"`
 	RevisionsCount int            `json:"revisions_count"`
-	// TODO comments count
+	CommentsCount  int            `json:"comments_count"`
 }
 
 // NewAPIReview creates new api review from store review
@@ -72,6 +72,11 @@ func NewAPIReview(review store.Review) (APIReview, error) {
 		return result, err
 	}
 	result.RevisionsCount = len(v.GetArray("Revisions"))
+	comments, err := store.Comments.CommentsForReview(review.ID)
+	if err != nil {
+		return result, err
+	}
+	result.CommentsCount = len(comments)
 	return result, nil
 }
 
@@ -84,6 +89,33 @@ func newAPIReviews(reviews []store.Review) ([]APIReview, error) {
 		}
 		result = append(result, ar)
 	}
+	return result, nil
+}
+
+// APIComment represents api result struct
+type APIComment struct {
+	ID      string       `json:"id"`
+	Author  auth.APIUser `json:"author"`
+	Created int64        `json:"created"`
+	Text    string       `json:"text"`
+	LineID  string       `json:"line_id"`
+	Childs  []APIComment `json:"childs"`
+}
+
+// NewAPIComment creates new api comment from store comment
+func NewAPIComment(comment store.Comment) (APIComment, error) {
+	result := APIComment{
+		ID:      comment.ID,
+		Created: comment.Created,
+		Text:    comment.Text,
+		LineID:  comment.LineID,
+		Childs:  make([]APIComment, 0),
+	}
+	author, err := store.Auth.FindUserByLogin(comment.Author)
+	if err != nil {
+		return result, err
+	}
+	result.Author = auth.NewAPIUser(author)
 	return result, nil
 }
 
@@ -279,13 +311,39 @@ var Review = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	comments := make([]store.Comment, 0) // TODO create APIComment with all information
-	/*comments, err := comments.RootCommentsForReview(review.ID.Hex())
+	comments, err := store.Comments.CommentsForReview(review.ID)
 	if err != nil {
-		logrus.Errorf("Cannot load comments for review: %s, error: %+v", review.ID.Hex(), err)
+		logrus.Errorf("Cannot load comments for review: %s, error: %+v", review.ID, err)
 		utils.Error(w, utils.InternalErrorResponse("Cannot load comments"))
 		return
-	}*/
+	}
+	apiComments := make(map[string]APIComment)
+	for _, comment := range comments {
+		ac, err := NewAPIComment(comment)
+		if err != nil {
+			logrus.Errorf("Cannot load comments for review: %s, error: %+v", review.ID, err)
+			utils.Error(w, utils.InternalErrorResponse("Cannot load comments"))
+			return
+		}
+		if len(comment.ParentID) == 0 {
+			apiComments[comment.ID] = ac
+		} else {
+			parent, exists := apiComments[comment.ParentID]
+			if !exists {
+				logrus.Errorf("Cannot load comments for review: %s, error: %+v", review.ID, err)
+				utils.Error(w, utils.InternalErrorResponse("Cannot load comments"))
+				return
+			}
+			parent.Childs = append(parent.Childs, ac)
+		}
+	}
+	resComments := make([]APIComment, 0)
+	for _, comment := range comments {
+		if len(comment.ParentID) == 0 {
+			resComments = append(resComments, apiComments[comment.ID])
+		}
+	}
+
 	res, err := NewAPIReview(review)
 	if err != nil {
 		logrus.Errorf("Cannot load users from incoming reviews: %+v", err)
@@ -295,7 +353,7 @@ var Review = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
 	utils.Ok(w, &map[string]interface{}{
 		"info":     res,
 		"diff":     content,
-		"comments": comments,
+		"comments": resComments,
 	})
 })
 
