@@ -135,6 +135,9 @@ func (s authStoreImpl) FindUsers(query string, exclude string) ([]User, error) {
 				bytes.HasPrefix(k, prefix) && len(result) < searchUsersCount; k, v = c.Next() {
 				logins := bytes.Split(v, []byte(loginListSeparator))
 				for _, login := range logins {
+					if bytes.Equal(login, excludeB) {
+						continue
+					}
 					result = append(result, User{})
 					err := json.Unmarshal(users.Get(login), &result[len(result)-1])
 					if err != nil {
