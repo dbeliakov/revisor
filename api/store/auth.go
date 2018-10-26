@@ -21,7 +21,7 @@ type AuthStore interface {
 	FindUserByLogin(login string) (User, error)
 	CreateUser(user User) error
 	UpdateUser(user User) error
-	FindUsers(query string) ([]User, error)
+	FindUsers(query string, exclude string) ([]User, error)
 	CheckExists(login string) (bool, error)
 }
 
@@ -111,14 +111,18 @@ func (s authStoreImpl) UpdateUser(user User) error {
 	return nil
 }
 
-func (s authStoreImpl) FindUsers(query string) ([]User, error) {
+func (s authStoreImpl) FindUsers(query string, exclude string) ([]User, error) {
 	result := make([]User, 0)
+	excludeB := []byte(exclude)
 	err := s.db.View(func(tx *bolt.Tx) error {
 		users := tx.Bucket(usersBucket)
 		c := users.Cursor()
 		prefix := []byte(query)
 		for k, v := c.Seek(prefix); k != nil &&
 			bytes.HasPrefix(k, prefix) && len(result) < searchUsersCount; k, v = c.Next() {
+			if bytes.Equal(k, excludeB) {
+				continue
+			}
 			result = append(result, User{})
 			err := json.Unmarshal(v, &result[len(result)-1])
 			if err != nil {

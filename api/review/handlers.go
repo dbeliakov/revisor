@@ -334,6 +334,7 @@ var Review = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			parent.Childs = append(parent.Childs, ac)
+			apiComments[comment.ParentID] = parent
 		}
 	}
 	resComments := make([]APIComment, 0)
@@ -537,6 +538,12 @@ var Accept = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
 
 // SearchReviewer by login or by name
 var SearchReviewer = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
+	user, err := auth.UserFromRequest(r)
+	if err != nil {
+		logrus.Errorf("Error while getting user from request context: %+v", err)
+		utils.Error(w, utils.InternalErrorResponse("No authorized user for this request"))
+	}
+
 	query, ok := r.URL.Query()["query"]
 	if !ok || len(query) == 0 || len(query[0]) == 0 {
 		logrus.Warnf("Empty query for search")
@@ -548,7 +555,7 @@ var SearchReviewer = auth.AuthRequired(func(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	results, err := store.Auth.FindUsers(query[0])
+	results, err := store.Auth.FindUsers(query[0], user.Login)
 	if err != nil {
 		logrus.Errorf("Cannot find reviewers: %+v", err)
 		utils.Error(w, utils.JSONErrorResponse{
