@@ -50,6 +50,7 @@ import NewComment from '@/components/NewComment.vue';
 
 @Component({
     components: {NewComment},
+    name: 'Comment',
 } )
 export default class Comment extends Vue {
     @Prop({default: undefined}) public readonly comment!: Comment;
