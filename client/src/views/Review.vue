@@ -12,8 +12,8 @@
       <template v-if="review.info.closed"><h4 style="display: inline;">Закрыто:</h4> <span v-if="review.info.accepted"> Принято</span> <span v-if="!review.info.accepted"> Отклонено</span><br></template>
       <span><h4 style="display: inline;">Обновлено:</h4> {{timeConverter(review.info.updated)}}</span>
       <div v-if="!review.info.closed" style="margin-top: 20px;">
-        <button v-if="review.info.owner.id === $auth.user().id" class="review-button ui primary basic button" @click="openModal">Обновить</button>
-        <button v-if="review.info.owner.id !== $auth.user().id" class="review-button ui positive basic button" @click="accept()">Принять</button>
+        <button v-if="review.info.owner.login === $auth.user().login" class="review-button ui primary basic button" @click="openModal">Обновить</button>
+        <button v-if="review.info.owner.login !== $auth.user().login" class="review-button ui positive basic button" @click="accept()">Принять</button>
         <button class="review-button ui negative basic button" @click="decline()">Отклонить</button><br>
       </div>
     </div>
