@@ -5,7 +5,7 @@ import {UserInfo} from '@/auth/user-info';
 import { Diff } from '@/reviews/diff';
 import Comment from '@/reviews/comment';
 
-class DiffReply {
+export class DiffReply {
     public info: Review;
     public diff: Diff;
     public comments: Comment[];
@@ -15,7 +15,7 @@ class DiffReply {
         this.diff = new Diff(json.diff);
         this.comments = [];
         for (const comment of json.comments) {
-            this.comments.push(new Comment(json));
+            this.comments.push(new Comment(comment));
         }
     }
 }
@@ -52,6 +52,23 @@ export default class ReviewsService {
         }
     }
 
+    public async updateReview(
+            reviewId: string,
+            name: string,
+            reviewers: string,
+            fileName: string | null,
+            fileContent: string | null): Promise<Error | undefined> {
+        try {
+            const params: {[id: string]: string; } = {name, reviewers};
+            if (fileName !== null && fileContent !== null) {
+                params.new_revision = fileContent;
+            }
+            await this.axios.post('/reviews/' + reviewId + '/update', params);
+        } catch (error) {
+            return responseToError(error);
+        }
+    }
+
     public async searchReviewers(query: string): Promise<UserInfo[] | Error> {
         try {
             const response = await this.axios.get('/users/search?query=' + query);
@@ -67,15 +84,15 @@ export default class ReviewsService {
 
     public async loadDiff(
             reviewId: string,
-            startRevision: number | undefined,
-            endRevision: number | undefined): Promise<DiffReply | Error> {
+            startRevision: number | null,
+            endRevision: number | null): Promise<DiffReply | Error> {
         let path = '/reviews/' + reviewId;
         if (startRevision && endRevision) {
-            path += '?start_rev=' + startRevision + '&end_rev=' + endRevision;
+            path += '?start_rev=' + (startRevision - 1) + '&end_rev=' + (endRevision! - 1);
         }
         try {
             const response = await this.axios.get(path);
-            return new DiffReply(response);
+            return new DiffReply(response.data.data);
         } catch (error) {
             return responseToError(error);
         }
@@ -90,6 +107,22 @@ export default class ReviewsService {
                 text,
                 parent: parentId,
             });
+        } catch (error) {
+            return responseToError(error);
+        }
+    }
+
+    public async acceptReview(reviewId: string): Promise<Error | undefined> {
+        try {
+            await this.axios.post('/reviews/' + reviewId + '/accept');
+        } catch (error) {
+            return responseToError(error);
+        }
+    }
+
+    public async declineReview(reviewId: string): Promise<Error | undefined> {
+        try {
+            await this.axios.post('/reviews/' + reviewId + '/decline');
         } catch (error) {
             return responseToError(error);
         }

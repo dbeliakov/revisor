@@ -1,33 +1,33 @@
 <template>
   <div style="margin: 20px 40px; text-align: left;">
-    <div v-if="review" style="">
-      <h1>{{ review.info.name }}</h1>
-      <h4 style="display: inline;">Создатель:</h4> {{ review.info.owner.first_name }}
-        {{ review.info.owner.last_name }} ({{ review.info.owner.username }})<br>
+    <div v-if="data">
+      <h1>{{ data.info.name }}</h1>
+      <h4 style="display: inline;">Создатель:</h4> {{ data.info.owner.firstName }}
+        {{ data.info.owner.lastName }} ({{ data.info.owner.username }})<br>
       <h4 style="display: inline;">Ревьюеры:</h4>
-        <span v-for="reviewer in review.info.reviewers" :key="reviewer.username">
-            {{reviewer.first_name}} {{reviewer.last_name}} ({{reviewer.username}})
-            <template v-if="reviewer !== review.info.reviewers[review.info.reviewers.length - 1]">,</template>
+        <span v-for="reviewer in data.info.reviewers" :key="reviewer.username">
+            {{reviewer.firstName}} {{reviewer.lastName}} ({{reviewer.username}})
+            <template v-if="reviewer !== data.info.reviewers[data.info.reviewers.length - 1]">,</template>
         </span><br>
-      <template v-if="review.info.closed"><h4 style="display: inline;">Закрыто:</h4> <span v-if="review.info.accepted"> Принято</span> <span v-if="!review.info.accepted"> Отклонено</span><br></template>
-      <span><h4 style="display: inline;">Обновлено:</h4> {{timeConverter(review.info.updated)}}</span>
-      <div v-if="!review.info.closed" style="margin-top: 20px;">
-        <button v-if="review.info.owner.username === $auth.user().username" class="review-button ui primary basic button" @click="openModal">Обновить</button>
-        <button v-if="review.info.owner.username !== $auth.user().username" class="review-button ui positive basic button" @click="accept()">Принять</button>
-        <button class="review-button ui negative basic button" @click="decline()">Отклонить</button><br>
+      <template v-if="data.info.closed"><h4 style="display: inline;">Закрыто:</h4> <span v-if="data.info.accepted"> Принято</span> <span v-if="!data.info.accepted"> Отклонено</span><br></template>
+      <span><h4 style="display: inline;">Обновлено:</h4> {{timeToString(data.info.updated)}}</span>
+      <div v-if="!data.info.closed" style="margin-top: 20px;">
+        <button v-if="data.info.owner.username === $auth.user().username" class="review-button ui primary basic button" @click="openModal">Обновить</button>
+        <button v-if="data.info.owner.username !== $auth.user().username" class="review-button ui positive basic button" @click="accept">Принять</button>
+        <button class="review-button ui negative basic button" @click="decline">Отклонить</button><br>
       </div>
     </div>
-    <div v-if="review" style="text-align: center; margin-bottom: 20px;">
-      <h4 style="margin-top: 30px; margin-bottom: 10px;" v-if="review.info.revisions_count > 1 && startRev !== null && endRev !== null">
+    <div v-if="data" style="text-align: center; margin-bottom: 20px;">
+      <h4 style="margin-top: 30px; margin-bottom: 10px;" v-if="data.info.revisionsCount > 1 && startRev !== null && endRev !== null">
         <span v-if="startRev != endRev">revision {{startRev}} <i class="right arrow icon"></i> revision {{endRev}}</span>
         <span v-else>revision {{startRev}}</span>
       </h4>
-      <div v-if="review.info.revisions_count > 1" id="slider_wrapper" style="margin: 0px auto; width:300px;">
+      <div v-if="data.info.revisionsCount > 1" id="slider_wrapper" style="margin: 0px auto; width:300px;">
         <div id="slider_revisions"></div>
       </div>
     </div>
 
-    <diff v-if="review" :diff="new Diff(review.diff)" :commentsList="review.comments.map((json) => new Comment(json))" :reviewId="review_id" @update-all="updateReview()"></diff>
+    <DiffComponent v-if="data" :diff="data.diff" :commentsList="data.comments" :reviewId="$route.params.id" @update-all="loadData"></DiffComponent>
 
     <div class="ui modal" id="add_revision">
       <i class="close icon"></i>
@@ -35,227 +35,250 @@
         Обновить ревью
       </div>
       <div class="content">
-        <form class="ui large form" v-on:submit.prevent="updateReviewOnServer()">
-          <div class="ui">
-            <div class="field">
-              <div class="ui input">
-                <input name="name" v-model="name" placeholder="Заголовок" type="text">
-              </div>
+        <form class="ui large form" v-on:submit.prevent="updateReview()">
+        <div class="ui">
+          <div class="field">
+            <div class="ui input">
+              <input name="name" v-model="name" placeholder="Заголовок" type="text">
             </div>
-            <div class="field">
-              <div class="ui input">
-                <input name="reviewers" v-model="reviewers" placeholder="Ревьюеры" type="text">
-              </div>
-            </div>
-            <div class="field">
-              <label for="file" class="ui icon button">
-                <i class="file icon"></i>
-                {{ filename }}</label>
-              <input type="file" id="file" style="display:none" v-on:change="changeFileName($event)">
-            </div>
-            <button class="ui fluid large blue submit button" type="submit">Обновить ревью</button>
           </div>
-          <div class="ui negative message" v-if="error.length > 0">{{ error }}</div>
-        </form>
+          <div class="reviewers-dropdown">
+            <div class="field" style="margin-bottom: 0px !important;">
+                <div class="ui input">
+                    <input
+                        name="reviewers"
+                        v-model="reviewerSearch"
+                        placeholder="Добавить ревьюера"
+                        type="text"
+                        autocomplete="off"
+                        @input="loadReviewersList"
+                        @keydown.enter.prevent>
+                </div>
+            </div>
+            <div class="ui vertical menu reviewers-list" style="width: 100%;" v-if="reviewersList.length > 0">
+                <a class="item"
+                    v-for="reviewer in reviewersList"
+                    :key="reviewer.id"
+                    @click="addReviewer(reviewer.username)">
+                    {{reviewer.firstName}} {{reviewer.lastName}} ({{reviewer.username}})
+                </a>
+            </div>
+          </div>
+          <div class="field" style="text-align: left; font-size: 14pt; margin-top: 20px;">
+                <b>Ревьюеры: </b><span v-if="reviewers.length === 0">
+                  нет добавленных ревьюеров
+                </span><span v-for="reviewer in reviewers" :key="reviewer.id">{{reviewer}}
+                    <i style="font-size: 12pt; cursor: pointer;"
+                        @click="removeReviewer(reviewer)"
+                        class="window close outline icon"></i></span>
+          </div>
+          <FileLoader
+            @onStartReading='onStartReadingFile'
+            @onFinishReading='onFinishReadingFile'
+            @onReadingError='onReadingError'/>
+          <button class="ui fluid large blue submit button" v-bind:class="{'disabled': formDisabled}" type="submit">Обновить ревью</button>
+        </div>
+        <div class="ui negative message" v-if="error.length > 0">{{ error }}</div>
+      </form>
       </div>
     </div>
   </div>
 </template>
 
-<script>
-/* tslint:disable */
-import DiffComponent from '@/components/Diff'
+<script lang="ts">
+import {Component, Vue, Watch} from 'vue-property-decorator';
+import DiffComponent from '@/components/Diff.vue';
+import FileLoader from '@/components/FileLoader.vue';
+import { DiffReply } from '@/reviews/service';
 import { Diff } from '@/reviews/diff';
-import Comment from '@/reviews/comment';
+import {timeToString} from '@/utils/utils';
 
-var $ = require('jquery')
-window.$ = $
-window.jQuery = $
+import * as $ from 'jquery';
+import { UserInfo } from '../auth/user-info';
+(window as any).$ = $;
+(window as any).jQuery = $;
 
-require('semantic-ui-css/semantic.min.js')
-require('jquery-ui/ui/widgets/slider.js')
-require('jquery-ui/themes/base/all.css')
+/* tslint:disable:no-var-requires */
+require('semantic-ui-css/semantic.min.js');
+require('jquery-ui/ui/widgets/slider.js');
+require('jquery-ui/themes/base/all.css');
 
-export default {
-  name: 'Review',
-  components: {
-    'diff': DiffComponent
-  },
-  props: ['id'],
-  created () {
-    this.updateReview()
-  },
-  data () {
-    return {
-      review_id: null,
-      review: null,
-      name: '',
-      reviewers: '',
-      error: '',
-      filename: 'Добавить файл',
-      fileContent: '',
-      startRev: null,
-      endRev: null,
-      Diff: Diff,
-      Comment: Comment,
+@Component({
+  components: {DiffComponent, FileLoader},
+})
+export default class Review extends Vue {
+  // public reviewId: string = '';
+  public data: DiffReply | null = null;
+  public startRev: number | null = null;
+  public endRev: number | null = null;
+
+  public name: string | null = null;
+  public filename: string | null = null;
+  public reviewerSearch: string = '';
+  public reviewersList: UserInfo[] = [];
+  public reviewers: string[] = [];
+  public formDisabled: boolean = false;
+  public fileContent: string = '';
+  public error: string = '';
+
+  public timeToString = timeToString;
+
+  public created() {
+    this.loadData();
+  }
+
+  @Watch('$route')
+  public onChildChanged(to: string, from: string) {
+    this.data = null;
+    this.loadData();
+  }
+
+  public async loadData() {
+    const result = await this.$reviews.loadDiff(this.$route.params.id, this.startRev, this.endRev);
+    if (result instanceof Error) {
+      alert(result);
+      return;
     }
-  },
-  methods: {
-    changeFileName (event) {
-      var file = event.target.files[0]
-      if (file) {
-        var reader = new FileReader()
-        reader.readAsDataURL(file, 'UTF-8')
-        var _this = this
-        reader.onload = function (evt) {
-          _this.filename = file.name
-          _this.fileContent = evt.target.result.replace(/^data:.+;base64,/, '')
-          _this.error = ''
-        }
-        reader.onerror = function (evt) {
-          _this.filename = 'Добавьте файл'
-          _this.fileContent = ''
-          _this.error = 'Ошибка при чтении файла'
-        }
-      }
-    },
-    updateReview () {
-      this.review_id = this.$route.params.id
-      var params = {}
-      if (this.startRev !== null) {
-        params['start_rev'] = this.startRev - 1
-      }
-      if (this.endRev !== null) {
-        params['end_rev'] = this.endRev - 1
-      }
-      this.$auth.axios.get('/reviews/' + this.review_id, {
-        params: params
-      }).then((response) => {
-        this.review = response.data.data
-        this.name = this.review.info.name
-        this.reviewers = ''
-        for (var i = 0; i < this.review.info.reviewers.length; ++i) {
-          this.reviewers += this.review.info.reviewers[i].username
-          if (i !== this.review.info.reviewers.length - 1) {
-            this.reviewers += ','
-          }
-        }
-
-        if (this.startRev === null) {
-          this.startRev = 1
-        }
-        if (this.endRev === null) {
-          this.endRev = this.review.info.revisions_count
-        }
-        
-        if (this.review.info.revisions_count > 1) {
-          var _this = this
-          $(function () {
-            $('#slider_revisions').slider({
-              range: true,
-              min: 1,
-              max: _this.review.info.revisions_count,
-              values: [_this.startRev, _this.endRev],
-              slide: function (event, ui) {
-                _this.startRev = ui.values[0]
-                _this.endRev = ui.values[1]
-                _this.updateReview()
-              }
-            })
-            var width = Math.min(800, _this.review.info.revisions_count * 40)
-            $('#slider_wrapper').css('width', '' + width + 'px')
-          })
-        }
-      })
-    },
-    updateReviewOnServer () {
-      var data = {
-        name: this.name,
-        reviewers: this.reviewers
-      }
-      if (this.fileContent.length > 0) {
-        data['new_revision'] = this.fileContent
-      }
-      this.$auth.axios.post('/reviews/' + this.review_id + '/update', data).then(() => {
-        $('#add_revision').modal('hide')
-        this.startRev = null
-        this.endRev = null
-        this.filename = 'Добавьте файл'
-        this.fileContent = ''
-        this.updateReview()
-      })
-    },
-    timeConverter (timestamp) {
-      var toStr = function (val) {
-        if (val < 10) {
-          return '0' + val
-        }
-        return '' + val
-      }
-
-      var a = new Date(timestamp * 1000)
-      var months = ['Января', 'Февраля', 'Марта', 'Апреля', 'Мая', 'Июня', 'Июля', 'Августа',
-        'Сентября', 'Октября', 'Ноября', 'Декабря']
-      var year = a.getFullYear()
-      var month = months[a.getMonth()]
-      var date = a.getDate()
-      var hour = a.getHours()
-      var min = a.getMinutes()
-      var time = date + ' ' + month + ' ' + year + ' ' + toStr(hour) + ':' + toStr(min)
-      return time
-    },
-    openModal () {
-      $('#add_revision').modal('show')
-    },
-    accept () {
-      this.$auth.axios.get('/reviews/' + this.review_id + '/accept').then(() => {
-        this.updateReview()
-      })
-    },
-    decline () {
-      this.$auth.axios.get('/reviews/' + this.review_id + '/decline').then(() => {
-        this.updateReview()
-      })
+    this.data = result;
+    if (!this.startRev) {
+      this.startRev = 1;
     }
-  },
-  watch: {
-    $route (to, from) {
-      this.review = {}
-      this.updateReview()
+    if (!this.endRev) {
+      this.endRev = this.data.info.revisionsCount;
     }
+    const that = this;
+    if (this.data.info.revisionsCount > 1) {
+      $(() => {
+        // TODO no slider without any
+        ($('#slider_revisions') as any).slider({
+          range: true,
+          min: 1,
+          max: that.data!.info.revisionsCount,
+          values: [that.startRev, that.endRev],
+          // TODO add types
+          slide(event: any, ui: any) {
+            that.startRev = ui.values[0];
+            that.endRev = ui.values[1];
+            that.loadData();
+          },
+        });
+        const width = Math.min(800, this.data!.info.revisionsCount * 40);
+        $('#slider_wrapper').css('width', '' + width + 'px');
+      });
+    }
+  }
+
+  public openModal() {
+    // TODO no modal without any
+    this.name = this.data!.info.name;
+    this.reviewers = this.data!.info.reviewers.map((reviewer: UserInfo) => reviewer.username);
+    this.filename = this.data!.diff.filename;
+    ($('#add_revision') as any).modal('show');
+  }
+
+  public onStartReadingFile() {
+    this.disableForm();
+  }
+
+  public onFinishReadingFile(filename: string, content: string) {
+    this.fileContent = content.replace(/^data:.+;base64,/, '');
+    this.filename = filename;
+    this.error = '';
+    this.enableForm();
+  }
+
+  public onReadingError(err: string) {
+    this.filename = '';
+    this.fileContent = '';
+    this.enableForm();
+    alert(err);
+  }
+
+  public addReviewer(username: string) {
+    if (this.reviewers.indexOf(username) === -1) {
+      this.reviewers.push(username);
+    }
+    this.reviewersList = [];
+    this.reviewerSearch = '';
+  }
+
+  public removeReviewer(username: string) {
+    const index = this.reviewers.indexOf(username);
+    if (index > -1) {
+      this.reviewers.splice(index, 1);
+    }
+  }
+
+  public async loadReviewersList() {
+    if (this.reviewerSearch.length === 0) {
+      this.reviewersList = [];
+      return;
+    }
+    const result = await this.$reviews.searchReviewers(this.reviewerSearch);
+    if (result instanceof Error) {
+      alert(result);
+      return;
+    }
+    this.reviewersList = result;
+  }
+
+  public async updateReview() {
+    if (this.formDisabled) {
+      return;
+    }
+    this.disableForm();
+    try {
+      if (!this.validateForm()) {
+        return;
+      }
+      const result = await this.$reviews.updateReview(
+        this.$route.params.id, this.name!, this.reviewers.join(','), this.filename, this.fileContent);
+      if (result) {
+        this.error = result.message;
+      } else {
+        // TODO no modal without any
+        ($('#add_revision') as any).modal('hide');
+        this.loadData();
+      }
+    } finally {
+      this.enableForm();
+    }
+  }
+
+  public async accept() {
+    const result = await this.$reviews.acceptReview(this.$route.params.id);
+    if (result) {
+      alert(result);
+    }
+    this.loadData();
+  }
+
+  public async decline() {
+    const result = await this.$reviews.declineReview(this.$route.params.id);
+    if (result) {
+      alert(result);
+    }
+    this.loadData();
+  }
+
+  private validateForm(): boolean {
+    if (this.name!.length === 0) {
+      this.error = 'Введите заголовок ревью';
+      return false;
+    }
+    if (this.reviewers.length === 0) {
+      this.error = 'Добавьте как минимум одного ревьюера';
+      return false;
+    }
+    return true;
+  }
+
+  private disableForm() {
+    this.formDisabled = true;
+  }
+
+  private enableForm() {
+    this.formDisabled = false;
   }
 }
 </script>
-
-<style scoped>
-h4 {
-  margin: 0px;
-}
-
-.d2h-code-line del,
-.d2h-code-side-line del {
-  background-color: #fee8e9 !important;
-}
-
-.d2h-code-line ins,
-.d2h-code-side-line ins {
-  background-color: #dfd;
-}
-
-.d2h-code-linenumber {
-  width: 66px;
-}
-
-.line-num1 {
-  width: 30px;
-}
-
-.line-num2 {
-  width: 30px;
-}
-
-.review-button {
-  width: 100px;
-  padding: 5px !important;
-}
-</style>
