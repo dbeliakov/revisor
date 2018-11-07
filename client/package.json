@@ -27,6 +27,7 @@
     "sass-loader": "^7.0.3",
     "vue-template-compiler": "^2.5.16",
     "@types/highlight.js": "^9.10.0",
-    "@types/marked": "^0.4.0"
+    "@types/marked": "^0.4.0",
+    "@types/jquery": "^3.3.22"
   }
 }

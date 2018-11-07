@@ -3,7 +3,6 @@ package review
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -89,9 +88,8 @@ func (file VersionedFile) RevisionsCount() int {
 // GetRevision returns specified revision of file
 func (file *VersionedFile) GetRevision(revision int) (File, error) {
 	if revision >= len(file.Revisions) || revision < 0 {
-		return File{}, errors.New(
-			"Bad revision: expected from " + string(0) +
-				" to " + string(len(file.Revisions)-1) + ", got " + string(revision))
+		return File{}, fmt.Errorf(
+			"Bad revision: expected from %d to %d, got %d", 0, len(file.Revisions)-1, revision)
 	}
 	return file.Revisions[revision], nil
 }

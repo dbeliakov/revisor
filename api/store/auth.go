@@ -138,6 +138,16 @@ func (s authStoreImpl) FindUsers(query string, exclude string) ([]User, error) {
 					if bytes.Equal(login, excludeB) {
 						continue
 					}
+					found := false
+					for _, f := range result {
+						if f.Login == string(login) {
+							found = true
+							break
+						}
+					}
+					if found {
+						continue
+					}
 					result = append(result, User{})
 					err := json.Unmarshal(users.Get(login), &result[len(result)-1])
 					if err != nil {
