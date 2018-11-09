@@ -10,10 +10,12 @@ import (
 
 // User represents information about registered user
 type User struct {
-	FirstName    string `json:"first_name"`
-	LastName     string `json:"last_name"`
-	Login        string `json:"username"`
-	PasswordHash string `json:"password_hash;omitempty"`
+	FirstName     string `json:"first_name"`
+	LastName      string `json:"last_name"`
+	Login         string `json:"username"`
+	PasswordHash  string `json:"password_hash;omitempty"`
+	TelegramID    int    `json:"telegram_id;omitempty"`
+	TelegramLogin string `json:"telegram_login;omitempty"`
 }
 
 // AuthStore provides access to auth module storage

@@ -103,6 +103,27 @@ export default class Auth {
         }
     }
 
+    public async linkTelegram(username: string, id: string): Promise<Error | undefined> {
+        try {
+            await this.axios.post('/notifications/telegram/link', {
+                username,
+                id,
+            });
+            return await this.updateUserInfo();
+        } catch (error) {
+            return responseToError(error);
+        }
+    }
+
+    public async unlinkTelegram(): Promise<Error | undefined> {
+        try {
+            await this.axios.post('/notifications/telegram/unlink');
+            return await this.updateUserInfo();
+        } catch (error) {
+            return responseToError(error);
+        }
+    }
+
     private sleep(): Promise<void> {
         return new Promise((res) => setTimeout(res, 100 /*ms*/));
     }
