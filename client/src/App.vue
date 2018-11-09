@@ -6,7 +6,7 @@
       </div>
 
       <div v-if="$auth.authenticated()" class="ui secondary pointing menu" style="margin-top: 10px;">
-        <span style="margin: 5px 20px; text-align: center; font-family: 'Slabo 27px', serif; font-size: 30pt; color: #7777cc;">Revisor</span>
+        <span style="margin: 5px 20px; text-align: center; font-family: 'Slabo 27px', serif; font-size: 30pt; color: #7777cc;"><b>Revisor</b></span>
         <router-link :to="{name: 'outgoing'}" active-class="active" class="item">
           Исходящие
           <!--<div class="ui green label">1</div>-->
