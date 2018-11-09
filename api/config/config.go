@@ -12,6 +12,8 @@ var (
 	SecretKey      = "SECRET_KEY"
 	ClientFilesDir = "./client"
 	DatabaseFile   = "./revisor.db"
+	TgAPIKey       = "secret_key"
+	BaseURL        = "http://localhost:8080"
 )
 
 func updateFromEnv(val *string, key string) {
@@ -38,4 +40,7 @@ func init() {
 	updateFromEnv(&SecretKey, "SECRET_KEY")
 	updateFromEnv(&ClientFilesDir, "CLIENT_FILES_DIR")
 	updateFromEnv(&DatabaseFile, "DATABASE_FILE")
+	updateFromEnv(&TgAPIKey, "TG_API_KEY")
+	updateFromEnv(&BaseURL, "BASE_URL")
+	TgAPIKey = "741718821:AAGX3Qt2ICZw3RacIiTree-3r97qN_zM-5g" // TODO
 }
