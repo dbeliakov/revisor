@@ -93,12 +93,12 @@ func newAPIReviews(reviews []store.Review) ([]APIReview, error) {
 
 // APIComment represents api result struct
 type APIComment struct {
-	ID      string       `json:"id"`
-	Author  auth.APIUser `json:"author"`
-	Created int64        `json:"created"`
-	Text    string       `json:"text"`
-	LineID  string       `json:"line_id"`
-	Childs  []APIComment `json:"childs"`
+	ID      string        `json:"id"`
+	Author  auth.APIUser  `json:"author"`
+	Created int64         `json:"created"`
+	Text    string        `json:"text"`
+	LineID  string        `json:"line_id"`
+	Childs  []*APIComment `json:"childs"`
 }
 
 // NewAPIComment creates new api comment from store comment
@@ -108,7 +108,7 @@ func NewAPIComment(comment store.Comment) (APIComment, error) {
 		Created: comment.Created,
 		Text:    comment.Text,
 		LineID:  comment.LineID,
-		Childs:  make([]APIComment, 0),
+		Childs:  make([]*APIComment, 0),
 	}
 	author, err := store.Auth.FindUserByLogin(comment.Author)
 	if err != nil {
@@ -316,7 +316,7 @@ var Review = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
 		utils.Error(w, utils.InternalErrorResponse("Cannot load comments"))
 		return
 	}
-	apiComments := make(map[string]APIComment)
+	apiComments := make(map[string]*APIComment)
 	for _, comment := range comments {
 		ac, err := NewAPIComment(comment)
 		if err != nil {
@@ -325,7 +325,7 @@ var Review = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if len(comment.ParentID) == 0 {
-			apiComments[comment.ID] = ac
+			apiComments[comment.ID] = &ac
 		} else {
 			parent, exists := apiComments[comment.ParentID]
 			if !exists {
@@ -333,14 +333,15 @@ var Review = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
 				utils.Error(w, utils.InternalErrorResponse("Cannot load comments"))
 				return
 			}
-			parent.Childs = append(parent.Childs, ac)
+			parent.Childs = append(parent.Childs, &ac)
 			apiComments[comment.ParentID] = parent
+			apiComments[comment.ID] = &ac
 		}
 	}
 	resComments := make([]APIComment, 0)
 	for _, comment := range comments {
 		if len(comment.ParentID) == 0 {
-			resComments = append(resComments, apiComments[comment.ID])
+			resComments = append(resComments, *apiComments[comment.ID])
 		}
 	}
 
