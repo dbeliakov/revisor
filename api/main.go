@@ -37,6 +37,7 @@ func addAPIHandlers(base string, r *mux.Router) {
 	// Notifications handlers
 	r.HandleFunc(base+"/notifications/telegram/link", notifications.LinkTelegram).Methods("POST")
 	r.HandleFunc(base+"/notifications/telegram/unlink", notifications.UnlinkTelegram).Methods("POST")
+	r.HandleFunc(base+"/notifications/telegram/login", notifications.TelegramLogin).Methods("GET")
 }
 
 func addClientFilesHandlers(r *mux.Router) {

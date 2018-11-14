@@ -21,11 +21,11 @@
     </div>
     
     <h1 style="margin-top: 60px;">Уведомления в Telegram</h1>
-    <span style="font-size: 15pt;" v-if="$auth.user().tgUsername">
+    <span style="font-size: 15pt;" v-if="tgLoaded && tgUsername != null">
       Подключен аккаунт <a :href='"https://t.me/" + $auth.user().tgUsername'>@{{$auth.user().tgUsername}}</a>.
       <button class="ui small blue button" @click="unlinkTelegram">Отключить</button>
     </span>
-    <div v-if="!$auth.user().tgUsername" id="telegram"></div>
+    <div v-if="tgLoaded && !tgUsername" id="telegram"></div>
   </div>
 </template>
 
@@ -39,6 +39,8 @@ export default class Profile extends Vue {
   public newPassword: string = '';
   public error: string = '';
   public formDisabled: boolean = false;
+  public tgUsername: string | null = null;
+  public tgLoaded: boolean = false;
 
   public async changePassword() {
     if (this.formDisabled) {
@@ -64,20 +66,19 @@ export default class Profile extends Vue {
     this.updateTgButton();
   }
 
-  public updateTgButton() {
-    if (!this.$auth.user().tgUsername) {
-      // create script with given params
-      const script = document.createElement('script');
-      script.async = true;
-      script.src = 'https://telegram.org/js/telegram-widget.js?5';
-      script.setAttribute('data-size', 'large');
-      script.setAttribute('data-telegram-login', 'RevisorNotificationsBot');
-      script.setAttribute('data-request-access', 'write');
-      script.setAttribute('data-onauth', 'onTelegramAuth(user)');
-      (window as any).onTelegramAuth = this.onTelegramAuth;
-      const target = document.getElementById('telegram');
-      target!.appendChild(script);
+  public async updateTgButton() {
+    this.tgLoaded = false;
+    const login = await this.$auth.telegramLogin();
+    if (login instanceof Error) {
+      alert(error);
+      return;
     }
+    if (login != null) {
+      this.tgUsername = login;
+    } else {
+      this.tgUsername = null;
+    }
+    this.tgLoaded = true;
   }
 
   public async unlinkTelegram() {
@@ -89,11 +90,31 @@ export default class Profile extends Vue {
     }
   }
 
+  public updated() {
+    if (this.tgUsername != null) {
+      return;
+    }
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = 'https://telegram.org/js/telegram-widget.js?5';
+    script.setAttribute('data-size', 'large');
+    script.setAttribute('data-telegram-login', 'RevisorNotificationsBot');
+    script.setAttribute('data-request-access', 'write');
+    script.setAttribute('data-onauth', 'onTelegramAuth(user)');
+    (window as any).onTelegramAuth = this.onTelegramAuth;
+    const target = document.getElementById('telegram');
+    if (target == null) {
+      return;
+    }
+    target!.appendChild(script);
+  }
+
   private async onTelegramAuth(user: any) {
     const response = await this.$auth.linkTelegram(user.username, user.id);
     if (response) {
       alert(response);
     }
+    this.updateTgButton();
   }
 
   private disableForm(): void {

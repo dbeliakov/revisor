@@ -18,8 +18,6 @@ const (
 	firstNameKey = "first_name"
 	lastNameKey  = "last_name"
 	loginKey     = "login"
-	tgLoginKey   = "tglogin"
-	tgIDKey      = "tgid"
 	expiredTTL   = 7 * 24 * time.Hour
 	refreshTTL   = 5 * 24 * time.Hour
 )
@@ -30,8 +28,6 @@ func NewToken(user store.User) (string, error) {
 		firstNameKey: user.FirstName,
 		lastNameKey:  user.LastName,
 		loginKey:     user.Login,
-		tgLoginKey:   user.TelegramLogin,
-		tgIDKey:      user.TelegramID,
 		"exp":        time.Now().Add(expiredTTL).Unix(),
 	})
 	tokenString, err := token.SignedString(signingKey)

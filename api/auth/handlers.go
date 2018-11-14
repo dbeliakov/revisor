@@ -120,17 +120,11 @@ var UserInfoHandler = AuthRequired(func(w http.ResponseWriter, r *http.Request) 
 		utils.Error(w, utils.InternalErrorResponse("No authorized user for this request"))
 		return
 	}
-	user, err := store.Auth.FindUserByLogin(u.Login)
-	if err != nil {
-		logrus.Errorf("Error while getting user from database: %+v", err)
-		utils.Error(w, utils.InternalErrorResponse("No authorized user for this request"))
-		return
-	}
 	type extraAPIUser struct {
 		APIUser
 		TgUsername string `json:"tg_username"`
 	}
-	utils.Ok(w, &extraAPIUser{APIUser: NewAPIUser(user), TgUsername: user.TelegramLogin})
+	utils.Ok(w, &extraAPIUser{APIUser: NewAPIUser(u), TgUsername: u.TelegramLogin})
 })
 
 // ChangePasswordHandler changes user password
@@ -147,14 +141,6 @@ var ChangePasswordHandler = AuthRequired(func(w http.ResponseWriter, r *http.Req
 		NewPassword string `json:"new_password" validate:"required,min=6"`
 	}
 	if err := utils.UnmarshalForm(w, r, &form); err != nil {
-		return
-	}
-
-	// Load from database user with password hash
-	user, err = store.Auth.FindUserByLogin(user.Login)
-	if err != nil {
-		logrus.Errorf("Error while getting user from database: %+v", err)
-		utils.Error(w, utils.InternalErrorResponse("No authorized user for this request"))
 		return
 	}
 
