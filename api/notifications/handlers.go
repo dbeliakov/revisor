@@ -72,3 +72,17 @@ var UnlinkTelegram = auth.AuthRequired(func(w http.ResponseWriter, r *http.Reque
 
 	utils.Ok(w, nil)
 })
+
+// TelegramLogin of user; if exists, user linked telegram for notifications
+var TelegramLogin = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
+	u, err := auth.UserFromRequest(r)
+	if err != nil {
+		logrus.Errorf("Error while getting user from request context: %+v", err)
+		utils.Error(w, utils.InternalErrorResponse("No authorized user for this request"))
+		return
+	}
+
+	utils.Ok(w, map[string]string{
+		"login": u.TelegramLogin,
+	})
+})

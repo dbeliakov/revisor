@@ -23,9 +23,9 @@ func notifyForComment(reviewID string, user store.User, comment string) {
 		return
 	}
 
-	text := "<b>" + rev.Name + "</b>\n\n"
-	text += user.FirstName + " " + user.LastName + " опубликовал комментарий:\n"
-	text += "<code>" + comment + "</code>"
+	text := "*" + rev.Name + "*\n\n"
+	text += "_" + user.FirstName + " " + user.LastName + " опубликовал комментарий:_\n"
+	text += "```\n" + comment + "\n```"
 
 	if user.Login != rev.Owner {
 		u, err := store.Auth.FindUserByLogin(rev.Owner)

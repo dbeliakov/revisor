@@ -109,7 +109,6 @@ export default class Auth {
                 username,
                 id,
             });
-            return await this.updateUserInfo();
         } catch (error) {
             return responseToError(error);
         }
@@ -118,7 +117,18 @@ export default class Auth {
     public async unlinkTelegram(): Promise<Error | undefined> {
         try {
             await this.axios.post('/notifications/telegram/unlink');
-            return await this.updateUserInfo();
+        } catch (error) {
+            return responseToError(error);
+        }
+    }
+
+    public async telegramLogin(): Promise<Error | string | null> {
+        try {
+            const response = await this.axios.get('/notifications/telegram/login');
+            if (response.data.data.login) {
+                return response.data.data.login;
+            }
+            return null;
         } catch (error) {
             return responseToError(error);
         }

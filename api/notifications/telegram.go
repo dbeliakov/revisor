@@ -26,9 +26,12 @@ func TelegramSend(user store.User, message string) {
 	if bot == nil {
 		return
 	}
+	if user.TelegramID <= 0 {
+		return
+	}
 	go func() {
 		msg := tgbotapi.NewMessage(int64(user.TelegramID), message)
-		msg.ParseMode = tgbotapi.ModeHTML
+		msg.ParseMode = tgbotapi.ModeMarkdown
 		_, err := bot.Send(msg)
 		if err != nil {
 			logrus.Errorf("Cannot send notification: %+v", err)
