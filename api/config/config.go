@@ -12,6 +12,7 @@ var (
 	SecretKey      = "SECRET_KEY"
 	ClientFilesDir = "./client"
 	DatabaseFile   = "./revisor.db"
+	TgAPIKey       = "secret_key"
 )
 
 func updateFromEnv(val *string, key string) {
@@ -38,4 +39,5 @@ func init() {
 	updateFromEnv(&SecretKey, "SECRET_KEY")
 	updateFromEnv(&ClientFilesDir, "CLIENT_FILES_DIR")
 	updateFromEnv(&DatabaseFile, "DATABASE_FILE")
+	updateFromEnv(&TgAPIKey, "TG_API_KEY")
 }
