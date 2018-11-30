@@ -23,7 +23,7 @@ const (
 )
 
 // NewToken generates new JWT token for user
-func NewToken(user store.User) (string, error) {
+func newToken(user store.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		firstNameKey: user.FirstName,
 		lastNameKey:  user.LastName,

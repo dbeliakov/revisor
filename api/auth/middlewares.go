@@ -38,7 +38,7 @@ func AuthRequired(h http.HandlerFunc) http.HandlerFunc {
 		}
 		user := userFromToken(claims)
 		if claims.VerifyExpiresAt(time.Now().Add(5*time.Hour*24).Unix(), false) {
-			token, err := NewToken(user)
+			token, err := newToken(user)
 			if err != nil {
 				logrus.Errorf("Cannot create new token for user: %s, error: %+v", user.Login, err)
 			} else {
