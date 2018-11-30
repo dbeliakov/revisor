@@ -12,10 +12,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var (
-	frontendReviewPrefix = config.BaseURL + "/review/"
-)
-
 func notifyForComment(reviewID string, user store.User, comment string) {
 	rev, err := store.Reviews.FindReviewByID(reviewID)
 	if err != nil {
