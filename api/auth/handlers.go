@@ -114,14 +114,13 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 
 // UserInfoHandler returns info about user
 var UserInfoHandler = AuthRequired(func(w http.ResponseWriter, r *http.Request) {
-	user, err := UserFromRequest(r)
+	u, err := UserFromRequest(r)
 	if err != nil {
 		logrus.Errorf("Error while getting user from request context: %+v", err)
 		utils.Error(w, utils.InternalErrorResponse("No authorized user for this request"))
 		return
 	}
-	user.PasswordHash = ""
-	utils.Ok(w, NewAPIUser(user))
+	utils.Ok(w, NewAPIUser(u))
 })
 
 // ChangePasswordHandler changes user password
@@ -138,14 +137,6 @@ var ChangePasswordHandler = AuthRequired(func(w http.ResponseWriter, r *http.Req
 		NewPassword string `json:"new_password" validate:"required,min=6"`
 	}
 	if err := utils.UnmarshalForm(w, r, &form); err != nil {
-		return
-	}
-
-	// Load from database user with password hash
-	user, err = store.Auth.FindUserByLogin(user.Login)
-	if err != nil {
-		logrus.Errorf("Error while getting user from database: %+v", err)
-		utils.Error(w, utils.InternalErrorResponse("No authorized user for this request"))
 		return
 	}
 

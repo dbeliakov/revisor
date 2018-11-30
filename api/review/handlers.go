@@ -320,7 +320,7 @@ var Review = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
 	for _, comment := range comments {
 		ac, err := NewAPIComment(comment)
 		if err != nil {
-			logrus.Errorf("Cannot load comments for review: %s, error: %+v", review.ID, err)
+			logrus.Errorf("Cannot create API comment for review: %s, error: %+v", review.ID, err)
 			utils.Error(w, utils.InternalErrorResponse("Cannot load comments"))
 			return
 		}
@@ -329,7 +329,7 @@ var Review = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
 		} else {
 			parent, exists := apiComments[comment.ParentID]
 			if !exists {
-				logrus.Errorf("Cannot load comments for review: %s, error: %+v", review.ID, err)
+				logrus.Errorf("Cannot find parent comment for review: %s, error: %+v", review.ID, err)
 				utils.Error(w, utils.InternalErrorResponse("Cannot load comments"))
 				return
 			}

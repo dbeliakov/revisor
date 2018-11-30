@@ -51,9 +51,14 @@ func AuthRequired(h http.HandlerFunc) http.HandlerFunc {
 
 // UserFromRequest extracts user with UserID, specified in request context
 func UserFromRequest(r *http.Request) (store.User, error) {
-	user := r.Context().Value(keyUser)
-	if user == nil {
+	u := r.Context().Value(keyUser)
+	if u == nil {
 		return store.User{}, errors.New("No \"keyUser\" value in request context")
 	}
-	return user.(store.User), nil
+	// Load additional user information from database
+	user, err := store.Auth.FindUserByLogin(u.(store.User).Login)
+	if err != nil {
+		return store.User{}, err
+	}
+	return user, nil
 }
