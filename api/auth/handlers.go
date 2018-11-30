@@ -48,7 +48,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if checkPassword(user, form.Password) {
-		token, err := NewToken(user)
+		token, err := newToken(user)
 		if err != nil {
 			logrus.Errorf("Cannot create new token for user: %s, error: %+v", form.Username, err)
 			utils.Error(w, utils.InternalErrorResponse("Cannot generate token"))
@@ -120,11 +120,7 @@ var UserInfoHandler = AuthRequired(func(w http.ResponseWriter, r *http.Request) 
 		utils.Error(w, utils.InternalErrorResponse("No authorized user for this request"))
 		return
 	}
-	type extraAPIUser struct {
-		APIUser
-		TgUsername string `json:"tg_username"`
-	}
-	utils.Ok(w, &extraAPIUser{APIUser: NewAPIUser(u), TgUsername: u.TelegramLogin})
+	utils.Ok(w, NewAPIUser(u))
 })
 
 // ChangePasswordHandler changes user password

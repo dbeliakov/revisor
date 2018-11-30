@@ -20,6 +20,7 @@ def deploy():
             f.write('SECRET_KEY=' + os.getenv('SECRET_KEY') + '\n')
             f.write('CLIENT_FILES_DIR=./client\n')
             f.write('DATABASE_FILE=/database/revisor.db\n')
+            f.write('TG_API_KEY=' + os.getenv('TG_API_KEY') + '\n')
 
     def docker_compose(command):
         with cd(PATH):
