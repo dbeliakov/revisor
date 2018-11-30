@@ -3,7 +3,6 @@ package comments
 import (
 	"net/http"
 	"reviewer/api/auth"
-	"reviewer/api/config"
 	"reviewer/api/notifications"
 	"reviewer/api/store"
 	"reviewer/api/utils"
