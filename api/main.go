@@ -7,7 +7,6 @@ import (
 	"github.com/dbeliakov/revisor/api/auth"
 	"github.com/dbeliakov/revisor/api/comments"
 	"github.com/dbeliakov/revisor/api/config"
-	"github.com/dbeliakov/revisor/api/notifications"
 	"github.com/dbeliakov/revisor/api/review"
 	gh "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -33,11 +32,6 @@ func addAPIHandlers(base string, r *mux.Router) {
 
 	// Comments handlers
 	r.HandleFunc(base+"/comments/add", comments.AddComment).Methods("POST")
-
-	// Notifications handlers
-	r.HandleFunc(base+"/notifications/telegram/link", notifications.LinkTelegram).Methods("POST")
-	r.HandleFunc(base+"/notifications/telegram/unlink", notifications.UnlinkTelegram).Methods("POST")
-	r.HandleFunc(base+"/notifications/telegram/login", notifications.TelegramLogin).Methods("GET")
 }
 
 func addClientFilesHandlers(r *mux.Router) {
