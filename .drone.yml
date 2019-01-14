@@ -1,0 +1,10 @@
+kind: pipeline
+name: create-docker-img
+
+steps:
+- name: backend
+  image: golang
+  commands:
+  - cd api
+  - go build
+  - go test ./...
