@@ -1,9 +1,8 @@
 package notifications
 
 import (
-	"reviewer/api/config"
-	"reviewer/api/store"
-
+	"github.com/dbeliakov/revisor/api/config"
+	"github.com/dbeliakov/revisor/api/store"
 	"github.com/go-telegram-bot-api/telegram-bot-api"
 	"github.com/sirupsen/logrus"
 )
