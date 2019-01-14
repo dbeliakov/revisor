@@ -16,6 +16,7 @@ steps:
 - name: frontend
   image: node:alpine
   commands:
+  - cd client
   - npm install
   - npm run fix-deps
   - npm run lint
