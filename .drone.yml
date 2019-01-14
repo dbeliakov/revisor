@@ -1,6 +1,10 @@
 kind: pipeline
 name: create-docker-img
 
+workspace:
+  base: /go
+  path: src/github.com/dbeliakov/revisor
+
 steps:
 - name: backend
   image: golang
