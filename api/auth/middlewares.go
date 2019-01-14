@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"reviewer/api/store"
-	"reviewer/api/utils"
 	"time"
 
+	"github.com/dbeliakov/revisor/api/store"
+	"github.com/dbeliakov/revisor/api/utils"
 	"github.com/sirupsen/logrus"
 )
 

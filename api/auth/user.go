@@ -1,8 +1,7 @@
 package auth
 
 import (
-	"reviewer/api/store"
-
+	"github.com/dbeliakov/revisor/api/store"
 	"golang.org/x/crypto/bcrypt"
 )
 

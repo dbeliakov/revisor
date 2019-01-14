@@ -3,9 +3,9 @@ package auth
 import (
 	"net/http"
 	"regexp"
-	"reviewer/api/store"
-	"reviewer/api/utils"
 
+	"github.com/dbeliakov/revisor/api/store"
+	"github.com/dbeliakov/revisor/api/utils"
 	"github.com/sirupsen/logrus"
 )
 

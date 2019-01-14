@@ -1,10 +1,10 @@
 package store
 
 import (
-	"reviewer/api/config"
 	"time"
 
 	"github.com/boltdb/bolt"
+	"github.com/dbeliakov/revisor/api/config"
 	"github.com/pkg/errors"
 )
 

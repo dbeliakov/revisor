@@ -3,12 +3,12 @@ package main
 import (
 	"net/http"
 	"os"
-	"reviewer/api/auth"
-	"reviewer/api/comments"
-	"reviewer/api/config"
-	"reviewer/api/notifications"
-	"reviewer/api/review"
 
+	"github.com/dbeliakov/revisor/api/auth"
+	"github.com/dbeliakov/revisor/api/comments"
+	"github.com/dbeliakov/revisor/api/config"
+	"github.com/dbeliakov/revisor/api/notifications"
+	"github.com/dbeliakov/revisor/api/review"
 	gh "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"

@@ -3,10 +3,10 @@ package auth
 import (
 	"errors"
 	"fmt"
-	"reviewer/api/config"
-	"reviewer/api/store"
 	"time"
 
+	"github.com/dbeliakov/revisor/api/config"
+	"github.com/dbeliakov/revisor/api/store"
 	"github.com/dgrijalva/jwt-go"
 )
 

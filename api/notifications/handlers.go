@@ -2,10 +2,10 @@ package notifications
 
 import (
 	"net/http"
-	"reviewer/api/auth"
-	"reviewer/api/store"
-	"reviewer/api/utils"
 
+	"github.com/dbeliakov/revisor/api/auth"
+	"github.com/dbeliakov/revisor/api/store"
+	"github.com/dbeliakov/revisor/api/utils"
 	"github.com/sirupsen/logrus"
 )
 
