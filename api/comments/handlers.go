@@ -5,41 +5,10 @@ import (
 	"time"
 
 	"github.com/dbeliakov/revisor/api/auth"
-	"github.com/dbeliakov/revisor/api/notifications"
 	"github.com/dbeliakov/revisor/api/store"
 	"github.com/dbeliakov/revisor/api/utils"
 	"github.com/sirupsen/logrus"
 )
-
-func notifyForComment(reviewID string, user store.User, comment string) {
-	rev, err := store.Reviews.FindReviewByID(reviewID)
-	if err != nil {
-		logrus.Errorf("Cannot find review for notification: %+v", err)
-		return
-	}
-
-	text := "*" + rev.Name + "*\n\n"
-	text += "_" + user.FirstName + " " + user.LastName + " опубликовал комментарий:_\n"
-	text += "```\n" + comment + "\n```"
-
-	if user.Login != rev.Owner {
-		u, err := store.Auth.FindUserByLogin(rev.Owner)
-		if err == nil {
-			notifications.TelegramSend(u, text)
-		}
-	}
-
-	for _, login := range rev.Reviewers {
-		if user.Login == login {
-			continue
-		}
-		u, err := store.Auth.FindUserByLogin(login)
-		if err != nil {
-			continue
-		}
-		notifications.TelegramSend(u, text)
-	}
-}
 
 // AddComment to line of review
 var AddComment = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
@@ -85,8 +54,6 @@ var AddComment = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) 
 		utils.Error(w, utils.InternalErrorResponse("Cannot save comment to database"))
 		return
 	}
-
-	notifyForComment(form.ReviewID, user, comment.Text)
 
 	utils.Ok(w, nil)
 })

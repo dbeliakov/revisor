@@ -5,7 +5,8 @@
   "scripts": {
     "serve": "vue-cli-service serve --mode development",
     "build": "vue-cli-service build --mode production",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "fix-deps": "mv node_modules/@types/highlight.js node_modules/@types/highlightjs"
   },
   "dependencies": {
     "vue": "^2.5.16",
