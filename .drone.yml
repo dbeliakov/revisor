@@ -12,3 +12,24 @@ steps:
   - cd api
   - go build
   - go test ./...
+
+- name: frontend
+  image: node:alpine
+  commands:
+  - npm install
+  - npm run fix-deps
+  - npm run lint
+  - npm run build
+
+- name: publish
+  image: plugins/docker
+  settings:
+    repo: dbeliakov/revisor
+    tags: ['latest'] # TODO
+    username:
+      from_secret: docker_username
+    password:
+      from_secret: docker_password
+  when:
+    branch: master
+
