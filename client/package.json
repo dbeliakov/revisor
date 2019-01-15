@@ -24,7 +24,7 @@
     "@vue/cli-plugin-babel": "^3.0.0-rc.5",
     "@vue/cli-plugin-typescript": "^3.0.0-rc.5",
     "@vue/cli-service": "^3.0.0-rc.5",
-    "node-sass": "^4.9.2",
+    "node-sass": "^4.11.0",
     "sass-loader": "^7.0.3",
     "vue-template-compiler": "^2.5.16",
     "@types/highlight.js": "^9.10.0",
