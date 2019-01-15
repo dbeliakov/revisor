@@ -38,7 +38,10 @@ steps:
 - name: deploy
   image: appleboy/drone-ssh
   host: revisor.dbeliakov.ru
-  secrets: [ssh_username, ssh_key]
+  username:
+    from_secret: test-user
+  key:
+    from_secret: test-key
   port: 22
   script:
   - cd ~/docker/revisor
