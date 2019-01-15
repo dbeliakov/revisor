@@ -33,4 +33,21 @@ steps:
       from_secret: docker_password
   when:
     branch: master
+    event: push
+
+- name: deploy
+  image: appleboy/drone-ssh
+  host: revisor.dbeliakov.ru
+  username:
+    from_secret: revisor_username
+  password:
+    from_secret: revisor_password
+  port: 22
+  script:
+  - cd ~/docker/revisor
+  - docker-compose pull
+  - docker-compose up -d
+  when:
+    branch: master
+    event: push
 
