@@ -11,7 +11,7 @@ var (
 	Debug          = false
 	SecretKey      = "SECRET_KEY"
 	ClientFilesDir = "./client"
-	DatabaseFile   = "./revisor.db"
+	DatabaseFile   = "/database/revisor.db"
 )
 
 func updateFromEnv(val *string, key string) {
@@ -37,5 +37,8 @@ func init() {
 	updateBoolFromEnv(&Debug, "DEBUG")
 	updateFromEnv(&SecretKey, "SECRET_KEY")
 	updateFromEnv(&ClientFilesDir, "CLIENT_FILES_DIR")
+	if Debug {
+		DatabaseFile = "./revisor.db"
+	}
 	updateFromEnv(&DatabaseFile, "DATABASE_FILE")
 }
