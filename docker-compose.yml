@@ -3,9 +3,8 @@ version: '2'
 services:
     service:
         restart: always
-        image: registry.gitlab.dbeliakov.ru/dbeliakov/revisor:latest
+        image: dbeliakov/revisor:latest
         networks:
-        - private
         - web
         labels:
         - "traefik.enable=true"
@@ -21,6 +20,4 @@ networks:
     web:
         external:
             name: traefik_webgateway
-    private:
-        driver: bridge
 
