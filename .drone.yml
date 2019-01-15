@@ -39,9 +39,10 @@ steps:
   image: appleboy/drone-ssh
   settings:
     host: revisor.dbeliakov.ru
-    username: 'test-user'
-    key: 'test-password'
-#    secrets: [ssh_username, ssh_key]
+    username:
+      from_secret: ssh_username
+    key:
+      from_secret: ssh_key
     port: 22
     script:
       - cd ~/docker/revisor
