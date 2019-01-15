@@ -40,7 +40,7 @@ steps:
   settings:
     host: revisor.dbeliakov.ru
     username: 'test-user'
-    password: 'test-password'
+    key: 'test-password'
 #    secrets: [ssh_username, ssh_key]
     port: 22
     script:
