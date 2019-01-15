@@ -15,6 +15,10 @@ steps:
 
 - name: frontend
   image: node:latest
+  mount:
+  - client/node_modules
+  volumes:
+  - /tmp/cache:/cache
   commands:
   - cd client
   - npm install
@@ -37,14 +41,14 @@ steps:
 
 - name: deploy
   image: appleboy/drone-ssh
-  host: revisor.dbeliakov.ru
-  username: test-user
-  key: test-key
-  port: 22
-  script:
-  - cd ~/docker/revisor
-  - docker-compose pull
-  - docker-compose up -d
+  settings:
+    host: revisor.dbeliakov.ru
+    secrets: [ssh_username, ssh_key]
+    port: 22
+    script:
+      - cd ~/docker/revisor
+      - docker-compose pull
+      - docker-compose up -d
   when:
     branch: master
     event: push
