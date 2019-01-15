@@ -130,7 +130,7 @@ func (file *VersionedFile) AddRevision(content []string) error {
 					newRevision.Lines = append(
 						newRevision.Lines[:j],
 						append(
-							[]Line{Line{Content: content[j], Revision: revisionsCount, ID: u.String()}},
+							[]Line{{Content: content[j], Revision: revisionsCount, ID: u.String()}},
 							newRevision.Lines[j:]...)...,
 					)
 				}
