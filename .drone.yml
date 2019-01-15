@@ -6,40 +6,42 @@ workspace:
   path: src/github.com/dbeliakov/revisor
 
 steps:
-- name: backend
-  image: golang
-  commands:
-  - cd api
-  - go build
-  - go test ./...
-
-- name: frontend
-  image: node:latest
-  commands:
-  - cd client
-  - npm install
-  - npm run fix-deps
-  - npm run lint
-  - npm run build
-
-- name: publish
-  image: plugins/docker
-  settings:
-    repo: dbeliakov/revisor
-    tags: ['latest'] # TODO
-    username:
-      from_secret: docker_username
-    password:
-      from_secret: docker_password
-  when:
-    branch: master
-    event: push
+#- name: backend
+#  image: golang
+#  commands:
+#  - cd api
+#  - go build
+#  - go test ./...
+#
+#- name: frontend
+#  image: node:latest
+#  commands:
+#  - cd client
+#  - npm install
+#  - npm run fix-deps
+#  - npm run lint
+#  - npm run build
+#
+#- name: publish
+#  image: plugins/docker
+#  settings:
+#    repo: dbeliakov/revisor
+#    tags: ['latest'] # TODO
+#    username:
+#      from_secret: docker_username
+#    password:
+#      from_secret: docker_password
+#  when:
+#    branch: master
+#    event: push
 
 - name: deploy
   image: appleboy/drone-ssh
   settings:
     host: revisor.dbeliakov.ru
-    secrets: [ssh_username, ssh_key]
+    username: 'test-user'
+    password: 'test-password'
+#    secrets: [ssh_username, ssh_key]
     port: 22
     script:
       - cd ~/docker/revisor
