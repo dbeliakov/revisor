@@ -15,10 +15,6 @@ steps:
 
 - name: frontend
   image: node:latest
-  mount:
-  - client/node_modules
-  volumes:
-  - /tmp/cache:/cache
   commands:
   - cd client
   - npm install
