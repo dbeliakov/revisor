@@ -1,6 +1,7 @@
 package config
 
 import (
+	"flag"
 	"os"
 	"strconv"
 
@@ -34,6 +35,9 @@ func updateBoolFromEnv(val *bool, key string) {
 }
 
 func init() {
+	if flag.Lookup("test.v") != nil {
+		Debug = true
+	}
 	updateBoolFromEnv(&Debug, "DEBUG")
 	updateFromEnv(&SecretKey, "SECRET_KEY")
 	updateFromEnv(&ClientFilesDir, "CLIENT_FILES_DIR")
