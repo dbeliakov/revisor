@@ -14,7 +14,7 @@ steps:
   - go test ./...
 
 - name: frontend
-  image: node:alpine
+  image: node:latest
   commands:
   - cd client
   - npm install
