@@ -20,7 +20,7 @@ Revisor - легкий и простой сервис для проведени�
 docker run -d --name revisor \
     -e SECRET_KEY=<some secret key> \
     -p 80:80 \
-    -v /srv/revisor:/database
+    -v /srv/revisor:/database \
     dbeliakov/revisor
 ```
 
