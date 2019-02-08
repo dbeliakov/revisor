@@ -1,163 +1,88 @@
 package store
 
 import (
-	"bytes"
-	"encoding/json"
-	"strconv"
-
-	"github.com/boltdb/bolt"
+	"github.com/asdine/storm"
 	"github.com/pkg/errors"
-	"github.com/valyala/fastjson"
 )
 
 // Review represents information about review
 type Review struct {
-	ID        string   `json:"id"`
-	File      []byte   `json:"versioned_file"`
-	Name      string   `json:"name"`
-	Updated   int64    `json:"updated"`
-	Closed    bool     `json:"closed"`
-	Accepted  bool     `json:"accepted"`
-	Owner     string   `json:"owner"`
-	Reviewers []string `json:"reviewers"`
+	ID       int    `storm:"id,increment"`
+	File     []byte // TODO store id of versioned file
+	Name     string
+	Updated  int64
+	Closed   bool
+	Accepted bool
+	Owner    string `storm:"index"`
+	// TODO create custom index for reviewers
+	Reviewers []string
 }
 
 // ReviewsStore provides access to comments module storage
 type ReviewsStore interface {
 	CreateReview(review *Review) error
-	FindReviewByID(id string) (Review, error)
+	FindReviewByID(id int) (Review, error)
 	FindReviewsByOwner(owner string) ([]Review, error)
 	FindReviewsByReviewer(reviewer string) ([]Review, error)
 	UpdateReview(review Review) error
 }
 
-var (
-	reviewsBucket = []byte("reviews")
-)
-
 type reviewsStoreImpl struct {
-	db *bolt.DB
+	db *storm.DB
 }
 
-func newReviewsStore(db *bolt.DB) ReviewsStore {
-	store := reviewsStoreImpl{db: db}
-	createBuckets(store.db, [][]byte{reviewsBucket})
-	return store
+func newReviewsStore(db *storm.DB) ReviewsStore {
+	return reviewsStoreImpl{db: db}
 }
 
-func (r reviewsStoreImpl) CreateReview(review *Review) error {
-	err := r.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket(reviewsBucket)
-		id, _ := b.NextSequence()
-		review.ID = strconv.FormatUint(id, 10)
-		bytes, err := json.Marshal(review)
-		if err != nil {
-			return errors.Wrap(err, "Cannot serialize review")
-		}
-		err = b.Put([]byte(review.ID), bytes)
-		if err != nil {
-			return errors.Wrap(err, "Cannot put new review")
-		}
-		return nil
-	})
+func (s reviewsStoreImpl) CreateReview(review *Review) error {
+	err := s.db.Save(review)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Cannot save review")
 	}
 	return nil
 }
 
-func (r reviewsStoreImpl) UpdateReview(review Review) error {
-	err := r.db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket(reviewsBucket)
-		bytes, err := json.Marshal(review)
-		if err != nil {
-			return errors.Wrap(err, "Cannot serialize review")
-		}
-		err = b.Put([]byte(review.ID), bytes)
-		if err != nil {
-			return errors.Wrap(err, "Cannot put new review")
-		}
-		return nil
-	})
+func (s reviewsStoreImpl) UpdateReview(review Review) error {
+	err := s.db.Update(review)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Cannot update review")
 	}
 	return nil
 }
 
-func (r reviewsStoreImpl) FindReviewByID(id string) (review Review, err error) {
-	err = r.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket(reviewsBucket)
-		v := b.Get([]byte(id))
-		if v == nil {
-			return errors.New("No review with such id")
-		}
-		err := json.Unmarshal(v, &review)
-		if err != nil {
-			return err
-		}
-		return nil
-	})
-	return
+func (s reviewsStoreImpl) FindReviewByID(id int) (Review, error) {
+	var review Review
+	err := s.db.One("ID", id, &review)
+	if err != nil {
+		return review, errors.Wrap(err, "Cannot find user by ID")
+	}
+	return review, nil
 }
 
-func (r reviewsStoreImpl) FindReviewsByOwner(owner string) ([]Review, error) {
-	result := make([]Review, 0)
-	ownerB := []byte(owner)
-	err := r.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket(reviewsBucket)
-		c := b.Cursor()
-		var p fastjson.Parser
-		for k, v := c.First(); k != nil; k, v = c.Next() {
-			parsed, err := p.ParseBytes(v)
-			if err != nil {
-				return errors.Wrap(err, "Cannot parse review")
-			}
-			reviewOwner := parsed.GetStringBytes("owner")
-			if bytes.Equal(reviewOwner, ownerB) {
-				result = append(result, Review{})
-				err := json.Unmarshal(v, &result[len(result)-1])
-				if err != nil {
-					return errors.Wrap(err, "Cannot deserialize review")
-				}
+func (s reviewsStoreImpl) FindReviewsByOwner(owner string) ([]Review, error) {
+	reviews := make([]Review, 0)
+	err := s.db.Find("Owner", owner, &reviews)
+	if err != nil {
+		return reviews, errors.Wrap(err, "Cannot find users by Owner")
+	}
+	return nil, nil
+}
+
+func (s reviewsStoreImpl) FindReviewsByReviewer(reviewer string) ([]Review, error) {
+	reviews := make([]Review, 0)
+	err := s.db.Select().Each(new(Review), func(v interface{}) error {
+		review := v.(*Review)
+		for _, rv := range review.Reviewers {
+			if rv == reviewer {
+				reviews = append(reviews, *review)
+				break
 			}
 		}
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Cannot find reviews by reviewer")
 	}
-	return result, nil
-}
-
-func (r reviewsStoreImpl) FindReviewsByReviewer(reviewer string) ([]Review, error) {
-	result := make([]Review, 0)
-	reviewerB := []byte(reviewer)
-	err := r.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket(reviewsBucket)
-		c := b.Cursor()
-		var p fastjson.Parser
-		for k, v := c.First(); k != nil; k, v = c.Next() {
-			parsed, err := p.ParseBytes(v)
-			if err != nil {
-				return errors.Wrap(err, "Cannot parse review")
-			}
-			reviewers := parsed.GetArray("reviewers")
-			for _, r := range reviewers {
-				if bytes.Equal(r.GetStringBytes(), reviewerB) {
-					result = append(result, Review{})
-					err := json.Unmarshal(v, &result[len(result)-1])
-					if err != nil {
-						return errors.Wrap(err, "Cannot deserialize review")
-					}
-					break
-				}
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
+	return reviews, err
 }
