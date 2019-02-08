@@ -69,9 +69,9 @@ func TestIncorrectRevisionNumber(t *testing.T) {
 
 func TestLineRevisionNumbers(t *testing.T) {
 	lineRevisions := [][]int{
-		[]int{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-		[]int{0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0},
-		[]int{0, 0, 0, 0, 2, 2, 1, 2, 2, 2, 0, 2, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+		{0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0},
+		{0, 0, 0, 0, 2, 2, 1, 2, 2, 2, 0, 2, 0, 0, 0, 0, 0, 0, 0},
 	}
 	file := NewVersionedFile(fileName, difflib.SplitLines(revisions[0]))
 	checkLineRevisions := func() {
