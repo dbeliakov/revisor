@@ -21,8 +21,8 @@ var AddComment = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) 
 
 	var form struct {
 		Text     string `json:"text" validate:"required"`
-		Parent   string `json:"parent"`
-		ReviewID string `json:"review_id" validate:"required"`
+		Parent   *int   `json:"parent,omitempty"`
+		ReviewID int    `json:"review_id" validate:"required"`
 		LineID   string `json:"line_id" validate:"required"`
 	}
 	if err := utils.UnmarshalForm(w, r, &form); err != nil {
@@ -33,11 +33,12 @@ var AddComment = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) 
 		Author:   user.Login,
 		Created:  time.Now().Unix(),
 		Text:     form.Text,
-		ParentID: form.Parent,
+		ParentID: 0,
 		LineID:   form.LineID,
 	}
 
-	if len(form.Parent) > 0 {
+	if form.Parent != nil {
+		comment.ParentID = *form.Parent
 		if exists, err := store.Comments.CheckExists(form.ReviewID, comment.ParentID); err != nil || !exists {
 			logrus.Warnf("Cannot find parent comment: %+v", err)
 			utils.Error(w, utils.JSONErrorResponse{

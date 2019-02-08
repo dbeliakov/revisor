@@ -18,21 +18,20 @@ import (
 )
 
 func hasAccess(login string, review store.Review) bool {
-	hasAccess := review.Owner == login
-	if !hasAccess {
-		for _, reviewer := range review.Reviewers {
-			if reviewer == login {
-				hasAccess = true
-				break
-			}
+	if review.Owner == login {
+		return true
+	}
+	for _, reviewer := range review.Reviewers {
+		if reviewer == login {
+			return true
 		}
 	}
-	return hasAccess
+	return false
 }
 
 // APIReview represents api result struct
 type APIReview struct {
-	ID             string         `json:"id"`
+	ID             int            `json:"id"`
 	Name           string         `json:"name"`
 	Updated        int64          `json:"updated"`
 	Closed         bool           `json:"closed"`
@@ -93,7 +92,7 @@ func newAPIReviews(reviews []store.Review) ([]APIReview, error) {
 
 // APIComment represents api result struct
 type APIComment struct {
-	ID      string        `json:"id"`
+	ID      int           `json:"id"`
 	Author  auth.APIUser  `json:"author"`
 	Created int64         `json:"created"`
 	Text    string        `json:"text"`
@@ -198,8 +197,8 @@ var NewReview = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
 
 	reviewers := strings.Split(form.Reviewers, ",")
 	for _, r := range reviewers {
-		exists, err := store.Auth.CheckExists(r)
-		if !exists || err != nil {
+		_, err := store.Auth.FindUserByLogin(r)
+		if err != nil {
 			logrus.Infof("Incorrect list of reviewers: %+v", err)
 			utils.Error(w, utils.JSONErrorResponse{
 				Status:        http.StatusNotAcceptable,
@@ -245,13 +244,22 @@ var Review = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	vars := mux.Vars(r)
-	reviewID := vars["id"]
-	review, err := store.Reviews.FindReviewByID(reviewID)
+	reviewID, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		logrus.Warnf("Cannot find review with id: %+s, error: %+v", reviewID, err)
+		logrus.Warnf("Incorrect ID: %+s, error: %+v", vars["id"], err)
 		utils.Error(w, utils.JSONErrorResponse{
 			Status:        http.StatusNotFound,
-			Message:       "No review with id: " + reviewID,
+			Message:       "No review with id: " + vars["id"],
+			ClientMessage: "Не удалось найти ревью",
+		})
+		return
+	}
+	review, err := store.Reviews.FindReviewByID(reviewID)
+	if err != nil {
+		logrus.Warnf("Cannot find review with id: %+s, error: %+v", vars["id"], err)
+		utils.Error(w, utils.JSONErrorResponse{
+			Status:        http.StatusNotFound,
+			Message:       "No review with id: " + vars["id"],
 			ClientMessage: "Не удалось найти ревью",
 		})
 		return
@@ -294,7 +302,7 @@ var Review = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !hasAccess(user.Login, review) {
-		logrus.Warnf("User %s han no access to review %s", user.Login, review.ID)
+		logrus.Warnf("User %s han no access to review %d", user.Login, review.ID)
 		utils.Error(w, utils.JSONErrorResponse{
 			Status:        http.StatusForbidden,
 			Message:       "No access to this review",
@@ -312,24 +320,24 @@ var Review = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
 
 	comments, err := store.Comments.CommentsForReview(review.ID)
 	if err != nil {
-		logrus.Errorf("Cannot load comments for review: %s, error: %+v", review.ID, err)
+		logrus.Errorf("Cannot load comments for review: %d, error: %+v", review.ID, err)
 		utils.Error(w, utils.InternalErrorResponse("Cannot load comments"))
 		return
 	}
-	apiComments := make(map[string]*APIComment)
+	apiComments := make(map[int]*APIComment)
 	for _, comment := range comments {
 		ac, err := NewAPIComment(comment)
 		if err != nil {
-			logrus.Errorf("Cannot create API comment for review: %s, error: %+v", review.ID, err)
+			logrus.Errorf("Cannot create API comment for review: %d, error: %+v", review.ID, err)
 			utils.Error(w, utils.InternalErrorResponse("Cannot load comments"))
 			return
 		}
-		if len(comment.ParentID) == 0 {
+		if comment.ParentID == 0 {
 			apiComments[comment.ID] = &ac
 		} else {
 			parent, exists := apiComments[comment.ParentID]
 			if !exists {
-				logrus.Errorf("Cannot find parent comment for review: %s, error: %+v", review.ID, err)
+				logrus.Errorf("Cannot find parent comment for review: %d, error: %+v", review.ID, err)
 				utils.Error(w, utils.InternalErrorResponse("Cannot load comments"))
 				return
 			}
@@ -340,7 +348,7 @@ var Review = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
 	}
 	resComments := make([]APIComment, 0)
 	for _, comment := range comments {
-		if len(comment.ParentID) == 0 {
+		if comment.ParentID == 0 {
 			resComments = append(resComments, *apiComments[comment.ID])
 		}
 	}
@@ -368,19 +376,28 @@ var UpdateReview = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request
 	}
 
 	vars := mux.Vars(r)
-	reviewID := vars["id"]
-	review, err := store.Reviews.FindReviewByID(reviewID)
+	reviewID, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		logrus.Warnf("Cannot find review: %s, error: %+v", reviewID, err)
+		logrus.Warnf("Incorrect ID: %s, error: %+v", vars["id"], err)
 		utils.Error(w, utils.JSONErrorResponse{
 			Status:        http.StatusNotFound,
-			Message:       "No review with id: " + reviewID,
+			Message:       "No review with id: " + vars["id"],
+			ClientMessage: "Не удалось найти ревью",
+		})
+		return
+	}
+	review, err := store.Reviews.FindReviewByID(reviewID)
+	if err != nil {
+		logrus.Warnf("Cannot find review: %s, error: %+v", vars["id"], err)
+		utils.Error(w, utils.JSONErrorResponse{
+			Status:        http.StatusNotFound,
+			Message:       "No review with id: " + vars["id"],
 			ClientMessage: "Не удалось найти ревью",
 		})
 		return
 	}
 	if review.Owner != user.Login {
-		logrus.Warnf("User %s tries to update review %s without being the creator", user.Login, review.ID)
+		logrus.Warnf("User %s tries to update review %d without being the creator", user.Login, review.ID)
 		utils.Error(w, utils.JSONErrorResponse{
 			Status:        http.StatusForbidden,
 			Message:       "Only owner allowed to update review",
@@ -412,8 +429,8 @@ var UpdateReview = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request
 
 	reviewers := strings.Split(form.Reviewers, ",")
 	for _, r := range reviewers {
-		exists, err := store.Auth.CheckExists(r)
-		if !exists || err != nil {
+		_, err := store.Auth.FindUserByLogin(r)
+		if err != nil {
 			logrus.Infof("Incorrect list of reviewers: %+v", err)
 			utils.Error(w, utils.JSONErrorResponse{
 				Status:        http.StatusNotAcceptable,
@@ -466,19 +483,28 @@ var Decline = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	vars := mux.Vars(r)
-	reviewID := vars["id"]
-	review, err := store.Reviews.FindReviewByID(reviewID)
+	reviewID, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		logrus.Warnf("Cannot find review: %s, error: %+v", reviewID, err)
+		logrus.Warnf("Incorrect ID: %s, error: %+v", vars["id"], err)
 		utils.Error(w, utils.JSONErrorResponse{
 			Status:        http.StatusNotFound,
-			Message:       "No review with id: " + reviewID,
+			Message:       "No review with id: " + vars["id"],
+			ClientMessage: "Не удалось найти ревью",
+		})
+		return
+	}
+	review, err := store.Reviews.FindReviewByID(reviewID)
+	if err != nil {
+		logrus.Warnf("Cannot find review: %d, error: %+v", reviewID, err)
+		utils.Error(w, utils.JSONErrorResponse{
+			Status:        http.StatusNotFound,
+			Message:       "No review with id: " + vars["id"],
 			ClientMessage: "Не удалось найти ревью",
 		})
 		return
 	}
 	if !hasAccess(user.Login, review) {
-		logrus.Warnf("User %s has no access to review %s", user.Login, review.ID)
+		logrus.Warnf("User %s has no access to review %d", user.Login, review.ID)
 		utils.Error(w, utils.JSONErrorResponse{
 			Status:        http.StatusForbidden,
 			Message:       "No access to this review",
@@ -506,19 +532,28 @@ var Accept = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
 	}
 
 	vars := mux.Vars(r)
-	reviewID := vars["id"]
-	review, err := store.Reviews.FindReviewByID(reviewID)
+	reviewID, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		logrus.Warnf("Cannot find review: %s, error: %+v", reviewID, err)
+		logrus.Warnf("Incorrect ID: %s, error: %+v", vars["id"], err)
 		utils.Error(w, utils.JSONErrorResponse{
 			Status:        http.StatusNotFound,
-			Message:       "No review with id: " + reviewID,
+			Message:       "No review with id: " + vars["id"],
+			ClientMessage: "Не удалось найти ревью",
+		})
+		return
+	}
+	review, err := store.Reviews.FindReviewByID(reviewID)
+	if err != nil {
+		logrus.Warnf("Cannot find review: %s, error: %+v", vars["id"], err)
+		utils.Error(w, utils.JSONErrorResponse{
+			Status:        http.StatusNotFound,
+			Message:       "No review with id: " + vars["id"],
 			ClientMessage: "Не удалось найти ревью",
 		})
 		return
 	}
 	if review.Owner == user.Login || !hasAccess(user.Login, review) {
-		logrus.Warnf("User %s has no access to review %s", user.Login, review.ID)
+		logrus.Warnf("User %s has no access to review %d", user.Login, review.ID)
 		utils.Error(w, utils.JSONErrorResponse{
 			Status:        http.StatusForbidden,
 			Message:       "No access to this review",
