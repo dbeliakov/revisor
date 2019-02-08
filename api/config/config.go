@@ -11,11 +11,11 @@ import (
 var (
 	// Debug start server in development mode
 	Debug = false
-	// Secret key for JWT tokens
+	// SecretKey for JWT tokens
 	SecretKey = "SECRET_KEY"
 	// ClientFilesDir with static client files
 	ClientFilesDir = "./client"
-	// Path to database
+	// DatabaseFile path to database
 	DatabaseFile = "/database/revisor.db"
 )
 
