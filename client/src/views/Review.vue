@@ -134,7 +134,7 @@ export default class Review extends Vue {
   }
 
   public async loadData() {
-    const result = await this.$reviews.loadDiff(this.$route.params.id, this.startRev, this.endRev);
+    const result = await this.$reviews.loadDiff(+this.$route.params.id, this.startRev, this.endRev);
     if (result instanceof Error) {
       alert(result);
       return;
@@ -227,15 +227,18 @@ export default class Review extends Vue {
       return;
     }
     this.disableForm();
+    this.error = '';
     try {
       if (!this.validateForm()) {
         return;
       }
       const result = await this.$reviews.updateReview(
-        this.$route.params.id, this.name!, this.reviewers.join(','), this.filename, this.fileContent);
+        +this.$route.params.id, this.name!, this.reviewers.join(','), this.filename, this.fileContent);
       if (result) {
         this.error = result.message;
       } else {
+        this.filename = null;
+        this.fileContent = '';
         // TODO no modal without any
         ($('#add_revision') as any).modal('hide');
         this.loadData();
@@ -246,7 +249,7 @@ export default class Review extends Vue {
   }
 
   public async accept() {
-    const result = await this.$reviews.acceptReview(this.$route.params.id);
+    const result = await this.$reviews.acceptReview(+this.$route.params.id);
     if (result) {
       alert(result);
     }
@@ -254,7 +257,7 @@ export default class Review extends Vue {
   }
 
   public async decline() {
-    const result = await this.$reviews.declineReview(this.$route.params.id);
+    const result = await this.$reviews.declineReview(+this.$route.params.id);
     if (result) {
       alert(result);
     }

@@ -31,10 +31,10 @@ import { userAvatarColor } from '@/utils/utils';
 
 @Component
 export default class NewComment extends Vue {
-    @Prop({default: ''}) public readonly reviewId!: string;
+    @Prop({default: ''}) public readonly reviewId!: number;
     @Prop({default: ''}) public readonly lineId!: string;
     @Prop({default: undefined}) public readonly author!: UserInfo;
-    @Prop({default: ''}) public readonly parentId!: string;
+    @Prop({default: ''}) public readonly parentId!: number;
 
     public text: string = '';
     public previewEnabled: boolean = false;

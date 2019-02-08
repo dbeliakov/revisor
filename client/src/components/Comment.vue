@@ -55,7 +55,7 @@ import NewComment from '@/components/NewComment.vue';
 export default class Comment extends Vue {
     @Prop({default: undefined}) public readonly comment!: Comment;
     @Prop({default: true}) public notFirst!: boolean;
-    @Prop({default: ''}) public readonly reviewId!: string;
+    @Prop({default: ''}) public readonly reviewId!: number;
     @Prop({default: ''}) public readonly lineId!: string;
     @Prop({default: 0}) public readonly level!: number;
 

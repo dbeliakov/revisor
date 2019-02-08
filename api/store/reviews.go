@@ -24,7 +24,7 @@ type ReviewsStore interface {
 	FindReviewByID(id int) (Review, error)
 	FindReviewsByOwner(owner string) ([]Review, error)
 	FindReviewsByReviewer(reviewer string) ([]Review, error)
-	UpdateReview(review Review) error
+	UpdateReview(review *Review) error
 }
 
 type reviewsStoreImpl struct {
@@ -43,7 +43,7 @@ func (s reviewsStoreImpl) CreateReview(review *Review) error {
 	return nil
 }
 
-func (s reviewsStoreImpl) UpdateReview(review Review) error {
+func (s reviewsStoreImpl) UpdateReview(review *Review) error {
 	err := s.db.Update(review)
 	if err != nil {
 		return errors.Wrap(err, "Cannot update review")
@@ -63,10 +63,13 @@ func (s reviewsStoreImpl) FindReviewByID(id int) (Review, error) {
 func (s reviewsStoreImpl) FindReviewsByOwner(owner string) ([]Review, error) {
 	reviews := make([]Review, 0)
 	err := s.db.Find("Owner", owner, &reviews)
+	if err == storm.ErrNotFound {
+		return reviews, nil
+	}
 	if err != nil {
 		return reviews, errors.Wrap(err, "Cannot find users by Owner")
 	}
-	return nil, nil
+	return reviews, nil
 }
 
 func (s reviewsStoreImpl) FindReviewsByReviewer(reviewer string) ([]Review, error) {

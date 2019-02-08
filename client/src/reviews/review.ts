@@ -1,7 +1,7 @@
 import { UserInfo } from '@/auth/user-info';
 
 export default class Review {
-    public id: string;
+    public id: number;
     public name: string;
     public closed: boolean;
     public accepted: boolean;

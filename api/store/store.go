@@ -15,7 +15,8 @@ var (
 	Reviews ReviewsStore
 )
 
-func init() {
+// InitStore and open database
+func InitStore() {
 	db, err := storm.Open(config.DatabaseFile)
 	if err != nil {
 		panic(errors.Wrap(err, "Cannot open database"))
