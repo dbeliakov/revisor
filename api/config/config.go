@@ -9,10 +9,14 @@ import (
 )
 
 var (
-	Debug          = false
-	SecretKey      = "SECRET_KEY"
+	// Debug start server in development mode
+	Debug = false
+	// Secret key for JWT tokens
+	SecretKey = "SECRET_KEY"
+	// ClientFilesDir with static client files
 	ClientFilesDir = "./client"
-	DatabaseFile   = "/database/revisor.db"
+	// Path to database
+	DatabaseFile = "/database/revisor.db"
 )
 
 func updateFromEnv(val *string, key string) {
