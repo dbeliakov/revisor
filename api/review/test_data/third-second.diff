@@ -1,0 +1,26 @@
+--- main.cpp
++++ main.cpp
+@@ -1,17 +1,18 @@
+ #include <iostream>
+-#include <vector>
+ 
+ size_t fib(size_t n)
+ {
+-    assert(n > 0);
+-    std::vector<size_t> res = {1, 1};
++    size_t first = 1;
++    size_t second = 1;
+     for (size_t i = 2; i < n; ++i) {
+-        res.push_back(res[i - 1] + res[i - 2]);
++        size_t next = first + second;
++        first = second;
++        second = next;
+     }
+-    return res[n - 1];
++    return second;
+ }
+ 
+ int main()
+ {
+     std::cout << fib(6) << std::endl;
+ }

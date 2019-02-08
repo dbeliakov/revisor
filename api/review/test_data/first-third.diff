@@ -1,0 +1,27 @@
+--- main.cpp
++++ main.cpp
+@@ -1,18 +1,17 @@
+ #include <iostream>
+ 
+ size_t fib(size_t n)
+ {
+-    size_t first = 1;
+-    size_t second = 1;
+-    for (size_t i = 2; i < n; ++i) {
+-        size_t next = first + second;
+-        first = second;
+-        second = next;
++    if (n == 1) {
++        return 1;
++    } else if (n == 2) {
++        return 1;
++    } else {
++        return fib(n - 1) + fib(n - 2);
+     }
+-    return second;
+ }
+ 
+ int main()
+ {
+     std::cout << fib(6) << std::endl;
+ }
