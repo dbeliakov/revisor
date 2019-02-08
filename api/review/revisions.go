@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/pmezard/go-difflib/difflib"
@@ -40,15 +39,6 @@ type Line struct {
 // File represents lines of file with revision numbers
 type File struct {
 	Lines []Line
-}
-
-func (file File) String() string {
-	var buffer bytes.Buffer
-	for _, line := range file.Lines {
-		buffer.WriteString(strconv.Itoa(line.Revision) + "\t")
-		buffer.WriteString(line.Content)
-	}
-	return buffer.String()
 }
 
 // Content returns content of revisioned file
@@ -97,10 +87,7 @@ func (file *VersionedFile) GetRevision(revision int) (File, error) {
 // AddRevision adds new revision to the versioned file
 func (file *VersionedFile) AddRevision(content []string) error {
 	revisionsCount := file.RevisionsCount()
-	lastRevision, err := file.GetRevision(revisionsCount - 1)
-	if err != nil {
-		return err
-	}
+	lastRevision, _ := file.GetRevision(revisionsCount - 1)
 	lastRevisionContent := make([]string, 0, len(lastRevision.Lines))
 	for _, line := range lastRevision.Lines {
 		lastRevisionContent = append(lastRevisionContent, line.Content)
