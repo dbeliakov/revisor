@@ -1,7 +1,7 @@
 import { UserInfo } from '@/auth/user-info';
 
 export default class Comment {
-    public id: string;
+    public id: number;
     public author: UserInfo;
     public created: Date;
     public text: string;

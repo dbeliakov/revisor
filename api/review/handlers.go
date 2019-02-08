@@ -465,7 +465,7 @@ var UpdateReview = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request
 		return
 	}
 	review.File = bytesFile
-	err = store.Reviews.UpdateReview(review)
+	err = store.Reviews.UpdateReview(&review)
 	if err != nil {
 		logrus.Errorf("Cannot save updated review: %+v", err)
 		utils.Error(w, utils.InternalErrorResponse("Cannot update review"))
@@ -515,7 +515,7 @@ var Decline = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
 
 	review.Closed = true
 	review.Accepted = false
-	err = store.Reviews.UpdateReview(review)
+	err = store.Reviews.UpdateReview(&review)
 	if err != nil {
 		logrus.Errorf("Cannot save review: %+v", err)
 		utils.Error(w, utils.InternalErrorResponse("Cannot update review"))
@@ -564,7 +564,7 @@ var Accept = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
 
 	review.Closed = true
 	review.Accepted = true
-	err = store.Reviews.UpdateReview(review)
+	err = store.Reviews.UpdateReview(&review)
 	if err != nil {
 		logrus.Errorf("Cannot save review: %+v", err)
 		utils.Error(w, utils.InternalErrorResponse("Cannot update review"))

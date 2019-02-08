@@ -73,7 +73,7 @@ class UILine {
 })
 export default class DiffComponent extends Vue {
   @Prop({default: undefined}) public diff!: Diff;
-  @Prop({default: ''}) public reviewId!: string;
+  @Prop({default: ''}) public reviewId!: number;
   @Prop({default: []}) public commentsList!: Comment[];
 
   public newCommentsShown: {[key: string]: boolean} = {};

@@ -53,7 +53,7 @@ export default class ReviewsService {
     }
 
     public async updateReview(
-            reviewId: string,
+            reviewId: number,
             name: string,
             reviewers: string,
             fileName: string | null,
@@ -83,7 +83,7 @@ export default class ReviewsService {
     }
 
     public async loadDiff(
-            reviewId: string,
+            reviewId: number,
             startRevision: number | null,
             endRevision: number | null): Promise<DiffReply | Error> {
         let path = '/reviews/' + reviewId;
@@ -98,21 +98,24 @@ export default class ReviewsService {
         }
     }
 
-    public async addComment(lineId: string, reviewId: string, text: string, parentId: string = '')
+    public async addComment(lineId: string, reviewId: number, text: string, parentId: number = 0)
             : Promise<Error | undefined> {
         try {
-            await this.axios.post('/comments/add', {
-                review_id: reviewId,
+            const data = {
+                review_id: Number(reviewId),
                 line_id: lineId,
                 text,
-                parent: parentId,
-            });
+            };
+            if (parentId > 0) {
+                (data as any).parent = parentId;
+            }
+            await this.axios.post('/comments/add', data);
         } catch (error) {
             return responseToError(error);
         }
     }
 
-    public async acceptReview(reviewId: string): Promise<Error | undefined> {
+    public async acceptReview(reviewId: number): Promise<Error | undefined> {
         try {
             await this.axios.post('/reviews/' + reviewId + '/accept');
         } catch (error) {
@@ -120,7 +123,7 @@ export default class ReviewsService {
         }
     }
 
-    public async declineReview(reviewId: string): Promise<Error | undefined> {
+    public async declineReview(reviewId: number): Promise<Error | undefined> {
         try {
             await this.axios.post('/reviews/' + reviewId + '/decline');
         } catch (error) {

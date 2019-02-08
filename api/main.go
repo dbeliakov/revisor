@@ -8,6 +8,7 @@ import (
 	"github.com/dbeliakov/revisor/api/comments"
 	"github.com/dbeliakov/revisor/api/config"
 	"github.com/dbeliakov/revisor/api/review"
+	"github.com/dbeliakov/revisor/api/store"
 	gh "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
@@ -39,6 +40,8 @@ func addClientFilesHandlers(r *mux.Router) {
 }
 
 func main() {
+	store.InitStore()
+
 	r := mux.NewRouter()
 	addAPIHandlers("/api", r)
 	addClientFilesHandlers(r)
