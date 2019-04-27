@@ -4,7 +4,7 @@ import (
 	"strconv"
 
 	"github.com/asdine/storm"
-	"github.com/pkg/errors"
+	"golang.org/x/xerrors"
 )
 
 // Comment represents information about comment
@@ -41,7 +41,7 @@ func (s commentsStoreImpl) FindCommentByID(reviewID, id int) (Comment, error) {
 	var comment Comment
 	err := s.node(reviewID).One("ID", id, &comment)
 	if err != nil {
-		return comment, errors.Wrap(err, "Cannot find comment by ID")
+		return comment, xerrors.Errorf("Cannot find comment by ID: %w", err)
 	}
 	return comment, nil
 }
@@ -49,7 +49,7 @@ func (s commentsStoreImpl) FindCommentByID(reviewID, id int) (Comment, error) {
 func (s commentsStoreImpl) CreateComment(reviewID int, comment *Comment) error {
 	err := s.node(reviewID).Save(comment)
 	if err != nil {
-		return errors.Wrap(err, "Cannot save comment")
+		return xerrors.Errorf("Cannot save comment: %w", err)
 	}
 	return nil
 }
@@ -61,7 +61,7 @@ func (s commentsStoreImpl) CheckExists(reviewID, id int) (bool, error) {
 		return false, nil
 	}
 	if err != nil {
-		return false, errors.Wrap(err, "Cannot find comment by ID")
+		return false, xerrors.Errorf("Cannot find comment by ID: %w", err)
 	}
 	return true, nil
 }
@@ -70,7 +70,7 @@ func (s commentsStoreImpl) CommentsForReview(reviewID int) ([]Comment, error) {
 	comments := make([]Comment, 0)
 	err := s.node(reviewID).All(&comments)
 	if err != nil {
-		return nil, errors.Wrap(err, "Cannot load all comments for review")
+		return nil, xerrors.Errorf("Cannot load all comments for review: %w", err)
 	}
 	return comments, nil
 }

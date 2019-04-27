@@ -2,13 +2,13 @@ package auth
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"time"
 
 	"github.com/dbeliakov/revisor/api/store"
 	"github.com/dbeliakov/revisor/api/utils"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/xerrors"
 )
 
 // authMiddlewareKey type for request context
@@ -53,7 +53,7 @@ func AuthRequired(h http.HandlerFunc) http.HandlerFunc {
 func UserFromRequest(r *http.Request) (store.User, error) {
 	u := r.Context().Value(keyUser)
 	if u == nil {
-		return store.User{}, errors.New("No \"keyUser\" value in request context")
+		return store.User{}, xerrors.New("No \"keyUser\" value in request context")
 	}
 	// Load additional user information from database
 	user, err := store.Auth.FindUserByLogin(u.(store.User).Login)

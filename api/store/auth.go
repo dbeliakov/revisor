@@ -2,7 +2,7 @@ package store
 
 import (
 	"github.com/asdine/storm"
-	"github.com/pkg/errors"
+	"golang.org/x/xerrors"
 )
 
 // User represents information about registered user
@@ -23,7 +23,7 @@ type AuthStore interface {
 
 var (
 	// ErrUserExists returns in case of login is not free
-	ErrUserExists = errors.New("User with such login already exists")
+	ErrUserExists = xerrors.New("User with such login already exists")
 
 	searchUsersCount = 5
 )
@@ -40,7 +40,7 @@ func (s authStoreImpl) FindUserByLogin(login string) (User, error) {
 	var user User
 	err := s.db.One("Login", login, &user)
 	if err != nil {
-		return user, errors.Wrap(err, "Cannot find user")
+		return user, xerrors.Errorf("Cannot find user: %w", err)
 	}
 	return user, nil
 }
@@ -48,21 +48,21 @@ func (s authStoreImpl) FindUserByLogin(login string) (User, error) {
 func (s authStoreImpl) CreateUser(user User) error {
 	tx, err := s.db.Begin(true)
 	if err != nil {
-		return errors.Wrap(err, "Cannot start transaction")
+		return xerrors.Errorf("Cannot start transaction: %w", err)
 	}
 	defer tx.Rollback()
 
 	var exists User
 	err = tx.One("Login", user.Login, &exists)
 	if err != nil && err != storm.ErrNotFound {
-		return errors.Wrap(err, "Cannot load user from database")
+		return xerrors.Errorf("Cannot load user from database: %w", err)
 	} else if err == nil {
-		return ErrUserExists
+		return xerrors.Errorf("user already exists: %w", ErrUserExists)
 	}
 
 	err = tx.Save(&user)
 	if err != nil {
-		return errors.Wrap(err, "Cannot save user")
+		return xerrors.Errorf("Cannot save user: %w")
 	}
 	tx.Commit()
 	return nil
@@ -71,7 +71,7 @@ func (s authStoreImpl) CreateUser(user User) error {
 func (s authStoreImpl) UpdateUser(user User) error {
 	err := s.db.Update(&user)
 	if err != nil {
-		return errors.Wrap(err, "Cannot update user")
+		return xerrors.Errorf("Cannot update user: %w", err)
 	}
 	return nil
 }
@@ -84,15 +84,15 @@ func (s authStoreImpl) FindUsers(query string, exclude string) ([]User, error) {
 	byLastName := make([]User, 0, searchUsersCount+len(exclude))
 	err := s.db.Prefix("Login", query, &byLogin, storm.Limit(searchUsersCount+len(exclude)))
 	if err != storm.ErrNotFound && err != nil {
-		return nil, errors.Wrap(err, "Cannot select users by login")
+		return nil, xerrors.Errorf("Cannot select users by login: %w", err)
 	}
 	err = s.db.Prefix("FirstName", query, &byFirstName, storm.Limit(searchUsersCount+len(exclude)))
 	if err != storm.ErrNotFound && err != nil {
-		return nil, errors.Wrap(err, "Cannot select users by first name")
+		return nil, xerrors.Errorf("Cannot select users by first name: %w", err)
 	}
 	err = s.db.Prefix("LastName", query, &byLastName, storm.Limit(searchUsersCount+len(exclude)))
 	if err != storm.ErrNotFound && err != nil {
-		return nil, errors.Wrap(err, "Cannot select users by last name")
+		return nil, xerrors.Errorf("Cannot select users by last name: %w", err)
 	}
 
 	result := make([]User, 0, searchUsersCount)

@@ -2,11 +2,11 @@ package utils
 
 import (
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"net/http"
 
 	"github.com/sirupsen/logrus"
+	"golang.org/x/xerrors"
 	validator "gopkg.in/go-playground/validator.v9"
 )
 
@@ -85,9 +85,9 @@ func Ok(w http.ResponseWriter, data interface{}) {
 
 var (
 	// ErrIncorrectBody error
-	ErrIncorrectBody = errors.New("Incorrect body")
+	ErrIncorrectBody = xerrors.New("Incorrect body")
 	// ErrIncorectFormFields error
-	ErrIncorectFormFields = errors.New("Incorrect form fields")
+	ErrIncorectFormFields = xerrors.New("Incorrect form fields")
 )
 
 // UnmarshalForm from body and validate it. If error occurs, writes error message to response writer
@@ -100,7 +100,7 @@ func UnmarshalForm(w http.ResponseWriter, r *http.Request, to interface{}) error
 			Message:       "Cannot read request body",
 			ClientMessage: "Внутренняя ошибка сервера. Пожалуйста, повторите позднее",
 		})
-		return ErrIncorrectBody
+		return xerrors.Errorf("cannot read request body: %w", ErrIncorrectBody)
 	}
 	err = json.Unmarshal(body, to)
 	if err != nil {
@@ -110,7 +110,7 @@ func UnmarshalForm(w http.ResponseWriter, r *http.Request, to interface{}) error
 			Message:       "Cannot unmarshal request body",
 			ClientMessage: "Сервер получил некорректный запрос",
 		})
-		return ErrIncorrectBody
+		return xerrors.Errorf("cannot unmarshal request body: %w", ErrIncorrectBody)
 	}
 
 	validate := validator.New()
@@ -122,7 +122,7 @@ func UnmarshalForm(w http.ResponseWriter, r *http.Request, to interface{}) error
 			Message:       "Invalid request",
 			ClientMessage: "Сервер получил некорректный запрос",
 		})
-		return ErrIncorrectBody
+		return xerrors.Errorf("invalid request body: %w", ErrIncorectFormFields)
 	}
 	return nil
 }
