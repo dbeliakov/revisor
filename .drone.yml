@@ -11,15 +11,18 @@ steps:
   commands:
   - cd api
   - go build
-  - go test -covermode=count -coverprofile coverage.out ./...
+  - go test ./...
 
-- name: coveralls
-  image: lizheming/drone-coveralls
-  settings:
-    token:
+steps:
+- name: coverage
+  image: golang
+  commands:
+  - cd api
+  - go get github.com/mattn/goveralls
+  - goveralls -service drone.io
+  environment:
+    COVERALLS_TOKEN:
       from_secret: coveralls_token
-    files:
-    - ./coverage.out
 
 - name: frontend
   image: node:latest
