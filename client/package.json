@@ -9,26 +9,28 @@
     "fix-deps": "mv node_modules/@types/highlight.js node_modules/@types/highlightjs"
   },
   "dependencies": {
-    "vue": "^2.5.16",
-    "vue-class-component": "^6.2.0",
-    "vue-property-decorator": "^7.0.0",
-    "vue-router": "^3.0.1",
     "axios": "^0.18.0",
-    "semantic-ui-css": "^2.3.3",
     "diff2html": "2.3.3",
     "highlightjs": "^9.10.0",
     "jquery-ui": "^1.12.1",
-    "marked": "^0.4.0"
+    "marked": "^0.6.2",
+    "semantic-ui-css": "^2.3.3",
+    "vue": "^2.5.16",
+    "vue-class-component": "^6.2.0",
+    "vue-property-decorator": "^7.0.0",
+    "vue-router": "^3.0.1"
   },
   "devDependencies": {
-    "@vue/cli-plugin-babel": "^3.0.0-rc.5",
-    "@vue/cli-plugin-typescript": "^3.0.0-rc.5",
-    "@vue/cli-service": "^3.0.0-rc.5",
-    "node-sass": "^4.11.0",
-    "sass-loader": "^7.0.3",
-    "vue-template-compiler": "^2.5.16",
     "@types/highlight.js": "^9.10.0",
+    "@types/jquery": "^3.3.22",
     "@types/marked": "^0.4.0",
-    "@types/jquery": "^3.3.22"
+    "@vue/cli-plugin-babel": "^3.6.0",
+    "@vue/cli-plugin-typescript": "^3.6.0",
+    "@vue/cli-service": "^3.6.0",
+    "ajv": "^6.10.0",
+    "node-sass": "^4.12.0",
+    "sass-loader": "^7.0.3",
+    "typescript": "^3.4.5",
+    "vue-template-compiler": "^2.5.16"
   }
 }
