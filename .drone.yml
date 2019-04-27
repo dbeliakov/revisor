@@ -11,7 +11,15 @@ steps:
   commands:
   - cd api
   - go build
-  - go test ./...
+  - go test ---coverprofile coverage.out ./...
+
+- name: coveralls
+  image: lizheming/drone-coveralls
+  settings:
+    token:
+      from_secret: coveralls_token
+    files:
+    - ./coverage.out
 
 - name: frontend
   image: node:latest
