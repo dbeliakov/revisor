@@ -46,13 +46,25 @@ func (s authStoreImpl) FindUserByLogin(login string) (User, error) {
 }
 
 func (s authStoreImpl) CreateUser(user User) error {
-	err := s.db.Save(&user)
-	if err == storm.ErrAlreadyExists {
+	tx, err := s.db.Begin(true)
+	if err != nil {
+		return errors.Wrap(err, "Cannot start transaction")
+	}
+	defer tx.Rollback()
+
+	var exists User
+	err = tx.One("Login", user.Login, &exists)
+	if err != nil && err != storm.ErrNotFound {
+		return errors.Wrap(err, "Cannot load user from database")
+	} else if err == nil {
 		return ErrUserExists
 	}
+
+	err = tx.Save(&user)
 	if err != nil {
 		return errors.Wrap(err, "Cannot save user")
 	}
+	tx.Commit()
 	return nil
 }
 
@@ -65,7 +77,7 @@ func (s authStoreImpl) UpdateUser(user User) error {
 }
 
 func (s authStoreImpl) FindUsers(query string, exclude string) ([]User, error) {
-	result := make([]User, 0, searchUsersCount)
+	foundLogins := make(map[string]bool)
 
 	byLogin := make([]User, 0, searchUsersCount+len(exclude))
 	byFirstName := make([]User, 0, searchUsersCount+len(exclude))
@@ -83,16 +95,46 @@ func (s authStoreImpl) FindUsers(query string, exclude string) ([]User, error) {
 		return nil, errors.Wrap(err, "Cannot select users by last name")
 	}
 
-	byLogin = append(byLogin, byFirstName...)
-	byLogin = append(byLogin, byLastName...)
+	result := make([]User, 0, searchUsersCount)
 
-	for _, res := range byLogin {
-		if res.Login != exclude {
-			result = append(result, res)
-			if len(result) == searchUsersCount {
-				break
-			}
+	for _, user := range byLogin {
+		foundLogins[user.Login] = true
+		if user.Login == exclude {
+			continue
+		}
+		result = append(result, user)
+		if len(result) == searchUsersCount {
+			return result, nil
 		}
 	}
+
+	for _, user := range byFirstName {
+		if _, ok := foundLogins[user.Login]; ok {
+			continue
+		}
+		foundLogins[user.Login] = true
+		if user.Login == exclude {
+			continue
+		}
+		result = append(result, user)
+		if len(result) == searchUsersCount {
+			return result, nil
+		}
+	}
+
+	for _, user := range byLastName {
+		if _, ok := foundLogins[user.Login]; ok {
+			continue
+		}
+		foundLogins[user.Login] = true
+		if user.Login == exclude {
+			continue
+		}
+		result = append(result, user)
+		if len(result) == searchUsersCount {
+			return result, nil
+		}
+	}
+
 	return result, nil
 }
