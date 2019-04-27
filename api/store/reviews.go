@@ -2,7 +2,7 @@ package store
 
 import (
 	"github.com/asdine/storm"
-	"github.com/pkg/errors"
+	"golang.org/x/xerrors"
 )
 
 // Review represents information about review
@@ -38,7 +38,7 @@ func newReviewsStore(db *storm.DB) ReviewsStore {
 func (s reviewsStoreImpl) CreateReview(review *Review) error {
 	err := s.db.Save(review)
 	if err != nil {
-		return errors.Wrap(err, "Cannot save review")
+		return xerrors.Errorf("Cannot save review: %w", err)
 	}
 	return nil
 }
@@ -46,7 +46,7 @@ func (s reviewsStoreImpl) CreateReview(review *Review) error {
 func (s reviewsStoreImpl) UpdateReview(review *Review) error {
 	err := s.db.Update(review)
 	if err != nil {
-		return errors.Wrap(err, "Cannot update review")
+		return xerrors.Errorf("Cannot update review: %w", err)
 	}
 	return nil
 }
@@ -55,7 +55,7 @@ func (s reviewsStoreImpl) FindReviewByID(id int) (Review, error) {
 	var review Review
 	err := s.db.One("ID", id, &review)
 	if err != nil {
-		return review, errors.Wrap(err, "Cannot find user by ID")
+		return review, xerrors.Errorf("Cannot find user by ID: %w", err)
 	}
 	return review, nil
 }
@@ -67,7 +67,7 @@ func (s reviewsStoreImpl) FindReviewsByOwner(owner string) ([]Review, error) {
 		return reviews, nil
 	}
 	if err != nil {
-		return reviews, errors.Wrap(err, "Cannot find users by Owner")
+		return reviews, xerrors.Errorf("Cannot find users by Owner: %w", err)
 	}
 	return reviews, nil
 }
@@ -85,7 +85,7 @@ func (s reviewsStoreImpl) FindReviewsByReviewer(reviewer string) ([]Review, erro
 		return nil
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "Cannot find reviews by reviewer")
+		return nil, xerrors.Errorf("Cannot find reviews by reviewer: %w", err)
 	}
 	return reviews, err
 }

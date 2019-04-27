@@ -3,7 +3,7 @@ package store
 import (
 	"github.com/asdine/storm"
 	"github.com/dbeliakov/revisor/api/config"
-	"github.com/pkg/errors"
+	"golang.org/x/xerrors"
 )
 
 var (
@@ -19,7 +19,7 @@ var (
 func InitStore() {
 	db, err := storm.Open(config.DatabaseFile)
 	if err != nil {
-		panic(errors.Wrap(err, "Cannot open database"))
+		panic(xerrors.Errorf("Cannot open database: %w", err))
 	}
 	Auth = newAuthStore(db)
 	Comments = newCommentsStore(db)

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/xerrors"
 )
 
 var (
@@ -64,7 +65,8 @@ func TestUniqueLogin(t *testing.T) {
 	u2 := user2
 	u2.Login = user1.Login
 	err = Auth.CreateUser(user1)
-	assert.Equal(t, ErrUserExists, err)
+	t.Log(xerrors.Is(err, ErrUserExists))
+	assert.True(t, xerrors.Is(err, ErrUserExists))
 }
 
 func TestUserNotExists(t *testing.T) {

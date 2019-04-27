@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/pmezard/go-difflib/difflib"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/xerrors"
 )
 
 const (
@@ -19,7 +19,7 @@ const (
 func readFile(name string) string {
 	res, err := ioutil.ReadFile(path.Join("test_data", name))
 	if err != nil {
-		panic(errors.Wrap(err, "Cannot open test data file"))
+		panic(xerrors.Errorf("Cannot open test data file: %w", err))
 	}
 	return string(res)
 }

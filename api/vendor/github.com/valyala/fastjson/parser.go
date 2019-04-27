@@ -5,6 +5,7 @@ import (
 	"github.com/valyala/fastjson/fastfloat"
 	"strconv"
 	"strings"
+	"unicode/utf16"
 )
 
 // Parser parses JSON.
@@ -33,11 +34,11 @@ func (p *Parser) Parse(s string) (*Value, error) {
 
 	v, tail, err := parseValue(b2s(p.b), &p.c)
 	if err != nil {
-		return nil, fmt.Errorf("cannot parse JSON: %s; unparsed tail: %q", err, tail)
+		return nil, fmt.Errorf("cannot parse JSON: %s; unparsed tail: %q", err, startEndString(tail))
 	}
 	tail = skipWS(tail)
 	if len(tail) > 0 {
-		return nil, fmt.Errorf("unexpected tail: %q", tail)
+		return nil, fmt.Errorf("unexpected tail: %q", startEndString(tail))
 	}
 	return v, nil
 }
@@ -65,9 +66,8 @@ func (c *cache) getValue() *Value {
 	} else {
 		c.vs = append(c.vs, Value{})
 	}
-	v := &c.vs[len(c.vs)-1]
-	v.reset()
-	return v
+	// Do not reset the value, since the caller must properly init it.
+	return &c.vs[len(c.vs)-1]
 }
 
 func skipWS(s string) string {
@@ -75,13 +75,15 @@ func skipWS(s string) string {
 		// Fast path.
 		return s
 	}
+	return skipWSSlow(s)
+}
 
-	// Slow path.
-	if s[0] != 0x20 && s[0] != 0x09 && s[0] != 0x0D && s[0] != 0x0A {
+func skipWSSlow(s string) string {
+	if len(s) == 0 || s[0] != 0x20 && s[0] != 0x0A && s[0] != 0x09 && s[0] != 0x0D {
 		return s
 	}
 	for i := 1; i < len(s); i++ {
-		if s[i] != 0x20 && s[i] != 0x09 && s[i] != 0x0D && s[i] != 0x0A {
+		if s[i] != 0x20 && s[i] != 0x0A && s[i] != 0x09 && s[i] != 0x0D {
 			return s[i:]
 		}
 	}
@@ -146,7 +148,7 @@ func parseValue(s string, c *cache) (*Value, string, error) {
 		return nil, tail, fmt.Errorf("cannot parse number: %s", err)
 	}
 	v := c.getValue()
-	v.t = typeRawNumber
+	v.t = TypeNumber
 	v.s = ns
 	return v, tail, nil
 }
@@ -158,11 +160,15 @@ func parseArray(s string, c *cache) (*Value, string, error) {
 	}
 
 	if s[0] == ']' {
-		return emptyArray, s[1:], nil
+		v := c.getValue()
+		v.t = TypeArray
+		v.a = v.a[:0]
+		return v, s[1:], nil
 	}
 
 	a := c.getValue()
 	a.t = TypeArray
+	a.a = a.a[:0]
 	for {
 		var v *Value
 		var err error
@@ -197,11 +203,15 @@ func parseObject(s string, c *cache) (*Value, string, error) {
 	}
 
 	if s[0] == '}' {
-		return emptyObject, s[1:], nil
+		v := c.getValue()
+		v.t = TypeObject
+		v.o.reset()
+		return v, s[1:], nil
 	}
 
 	o := c.getValue()
 	o.t = TypeObject
+	o.o.reset()
 	for {
 		var err error
 		kv := o.o.getKV()
@@ -242,6 +252,31 @@ func parseObject(s string, c *cache) (*Value, string, error) {
 	}
 }
 
+func escapeString(dst []byte, s string) []byte {
+	if !hasSpecialChars(s) {
+		// Fast path - nothing to escape.
+		dst = append(dst, '"')
+		dst = append(dst, s...)
+		dst = append(dst, '"')
+		return dst
+	}
+
+	// Slow path.
+	return strconv.AppendQuote(dst, s)
+}
+
+func hasSpecialChars(s string) bool {
+	if strings.IndexByte(s, '"') >= 0 || strings.IndexByte(s, '\\') >= 0 {
+		return true
+	}
+	for i := 0; i < len(s); i++ {
+		if s[i] < 0x20 {
+			return true
+		}
+	}
+	return false
+}
+
 func unescapeStringBestEffort(s string) string {
 	n := strings.IndexByte(s, '\\')
 	if n < 0 {
@@ -276,18 +311,38 @@ func unescapeStringBestEffort(s string) string {
 		case 'u':
 			if len(s) < 4 {
 				// Too short escape sequence. Just store it unchanged.
-				b = append(b, '\\', ch)
+				b = append(b, "\\u"...)
 				break
 			}
 			xs := s[:4]
 			x, err := strconv.ParseUint(xs, 16, 16)
 			if err != nil {
 				// Invalid escape sequence. Just store it unchanged.
-				b = append(b, '\\', ch)
+				b = append(b, "\\u"...)
 				break
 			}
-			b = append(b, string(rune(x))...)
 			s = s[4:]
+			if !utf16.IsSurrogate(rune(x)) {
+				b = append(b, string(rune(x))...)
+				break
+			}
+
+			// Surrogate.
+			// See https://en.wikipedia.org/wiki/Universal_Character_Set_characters#Surrogates
+			if len(s) < 6 || s[0] != '\\' || s[1] != 'u' {
+				b = append(b, "\\u"...)
+				b = append(b, xs...)
+				break
+			}
+			x1, err := strconv.ParseUint(s[2:6], 16, 16)
+			if err != nil {
+				b = append(b, "\\u"...)
+				b = append(b, xs...)
+				break
+			}
+			r := utf16.DecodeRune(rune(x), rune(x1))
+			b = append(b, string(r)...)
+			s = s[6:]
 		default:
 			// Unknown escape sequence. Just store it unchanged.
 			b = append(b, '\\', ch)
@@ -389,7 +444,7 @@ func (o *Object) MarshalTo(dst []byte) []byte {
 	dst = append(dst, '{')
 	for i, kv := range o.kvs {
 		if o.keysUnescaped {
-			dst = strconv.AppendQuote(dst, kv.k)
+			dst = escapeString(dst, kv.k)
 		} else {
 			dst = append(dst, '"')
 			dst = append(dst, kv.k...)
@@ -411,7 +466,9 @@ func (o *Object) MarshalTo(dst []byte) []byte {
 // See MarshalTo instead.
 func (o *Object) String() string {
 	b := o.MarshalTo(nil)
-	return string(b)
+	// It is safe converting b to string without allocation, since b is no longer
+	// reachable after this line.
+	return b2s(b)
 }
 
 func (o *Object) getKV() *kv {
@@ -491,16 +548,7 @@ type Value struct {
 	o Object
 	a []*Value
 	s string
-	n float64
 	t Type
-}
-
-func (v *Value) reset() {
-	v.o.reset()
-	v.a = v.a[:0]
-	v.s = ""
-	v.n = 0
-	v.t = TypeNull
 }
 
 // MarshalTo appends marshaled v to dst and returns the result.
@@ -511,8 +559,6 @@ func (v *Value) MarshalTo(dst []byte) []byte {
 		dst = append(dst, v.s...)
 		dst = append(dst, '"')
 		return dst
-	case typeRawNumber:
-		return append(dst, v.s...)
 	case TypeObject:
 		return v.o.MarshalTo(dst)
 	case TypeArray:
@@ -526,12 +572,9 @@ func (v *Value) MarshalTo(dst []byte) []byte {
 		dst = append(dst, ']')
 		return dst
 	case TypeString:
-		return strconv.AppendQuote(dst, v.s)
+		return escapeString(dst, v.s)
 	case TypeNumber:
-		if float64(int(v.n)) == v.n {
-			return strconv.AppendInt(dst, int64(v.n), 10)
-		}
-		return strconv.AppendFloat(dst, v.n, 'f', -1, 64)
+		return append(dst, v.s...)
 	case TypeTrue:
 		return append(dst, "true"...)
 	case TypeFalse:
@@ -552,7 +595,9 @@ func (v *Value) MarshalTo(dst []byte) []byte {
 // for obtaining the underlying JSON string for the v.
 func (v *Value) String() string {
 	b := v.MarshalTo(nil)
-	return string(b)
+	// It is safe converting b to string without allocation, since b is no longer
+	// reachable after this line.
+	return b2s(b)
 }
 
 // Type represents JSON type.
@@ -581,7 +626,6 @@ const (
 	TypeFalse Type = 6
 
 	typeRawString Type = 7
-	typeRawNumber Type = 8
 )
 
 // String returns string representation of t.
@@ -602,8 +646,8 @@ func (t Type) String() string {
 	case TypeNull:
 		return "null"
 
-	// typeRawString and typeRawNumber are skipped intentionally,
-	// since they shouldn't be visible to user.
+	// typeRawString is skipped intentionally,
+	// since it shouldn't be visible to user.
 	default:
 		panic(fmt.Errorf("BUG: unknown Value type: %d", t))
 	}
@@ -614,9 +658,6 @@ func (v *Value) Type() Type {
 	if v.t == typeRawString {
 		v.s = unescapeStringBestEffort(v.s)
 		v.t = TypeString
-	} else if v.t == typeRawNumber {
-		v.n = fastfloat.ParseBestEffort(v.s)
-		v.t = TypeNumber
 	}
 	return v.t
 }
@@ -699,7 +740,7 @@ func (v *Value) GetFloat64(keys ...string) float64 {
 	if v == nil || v.Type() != TypeNumber {
 		return 0
 	}
-	return v.n
+	return fastfloat.ParseBestEffort(v.s)
 }
 
 // GetInt returns int value by the given keys path.
@@ -712,7 +753,56 @@ func (v *Value) GetInt(keys ...string) int {
 	if v == nil || v.Type() != TypeNumber {
 		return 0
 	}
-	return int(v.n)
+	n := fastfloat.ParseInt64BestEffort(v.s)
+	nn := int(n)
+	if int64(nn) != n {
+		return 0
+	}
+	return nn
+}
+
+// GetUint returns uint value by the given keys path.
+//
+// Array indexes may be represented as decimal numbers in keys.
+//
+// 0 is returned for non-existing keys path or for invalid value type.
+func (v *Value) GetUint(keys ...string) uint {
+	v = v.Get(keys...)
+	if v == nil || v.Type() != TypeNumber {
+		return 0
+	}
+	n := fastfloat.ParseUint64BestEffort(v.s)
+	nn := uint(n)
+	if uint64(nn) != n {
+		return 0
+	}
+	return nn
+}
+
+// GetInt64 returns int64 value by the given keys path.
+//
+// Array indexes may be represented as decimal numbers in keys.
+//
+// 0 is returned for non-existing keys path or for invalid value type.
+func (v *Value) GetInt64(keys ...string) int64 {
+	v = v.Get(keys...)
+	if v == nil || v.Type() != TypeNumber {
+		return 0
+	}
+	return fastfloat.ParseInt64BestEffort(v.s)
+}
+
+// GetUint64 returns uint64 value by the given keys path.
+//
+// Array indexes may be represented as decimal numbers in keys.
+//
+// 0 is returned for non-existing keys path or for invalid value type.
+func (v *Value) GetUint64(keys ...string) uint64 {
+	v = v.Get(keys...)
+	if v == nil || v.Type() != TypeNumber {
+		return 0
+	}
+	return fastfloat.ParseUint64BestEffort(v.s)
 }
 
 // GetStringBytes returns string value by the given keys path.
@@ -786,15 +876,72 @@ func (v *Value) Float64() (float64, error) {
 	if v.Type() != TypeNumber {
 		return 0, fmt.Errorf("value doesn't contain number; it contains %s", v.Type())
 	}
-	return v.n, nil
+	f := fastfloat.ParseBestEffort(v.s)
+	return f, nil
 }
 
 // Int returns the underlying JSON int for the v.
 //
 // Use GetInt if you don't need error handling.
 func (v *Value) Int() (int, error) {
-	f, err := v.Float64()
-	return int(f), err
+	if v.Type() != TypeNumber {
+		return 0, fmt.Errorf("value doesn't contain number; it contains %s", v.Type())
+	}
+	n := fastfloat.ParseInt64BestEffort(v.s)
+	if n == 0 && v.s != "0" {
+		return 0, fmt.Errorf("cannot parse int %q", v.s)
+	}
+	nn := int(n)
+	if int64(nn) != n {
+		return 0, fmt.Errorf("number %q doesn't fit int", v.s)
+	}
+	return nn, nil
+}
+
+// Uint returns the underlying JSON uint for the v.
+//
+// Use GetInt if you don't need error handling.
+func (v *Value) Uint() (uint, error) {
+	if v.Type() != TypeNumber {
+		return 0, fmt.Errorf("value doesn't contain number; it contains %s", v.Type())
+	}
+	n := fastfloat.ParseUint64BestEffort(v.s)
+	if n == 0 && v.s != "0" {
+		return 0, fmt.Errorf("cannot parse uint %q", v.s)
+	}
+	nn := uint(n)
+	if uint64(nn) != n {
+		return 0, fmt.Errorf("number %q doesn't fit uint", v.s)
+	}
+	return nn, nil
+}
+
+// Int64 returns the underlying JSON int64 for the v.
+//
+// Use GetInt64 if you don't need error handling.
+func (v *Value) Int64() (int64, error) {
+	if v.Type() != TypeNumber {
+		return 0, fmt.Errorf("value doesn't contain number; it contains %s", v.Type())
+	}
+	n := fastfloat.ParseInt64BestEffort(v.s)
+	if n == 0 && v.s != "0" {
+		return 0, fmt.Errorf("cannot parse int64 %q", v.s)
+	}
+	return n, nil
+}
+
+// Uint64 returns the underlying JSON uint64 for the v.
+//
+// Use GetInt64 if you don't need error handling.
+func (v *Value) Uint64() (uint64, error) {
+	if v.Type() != TypeNumber {
+		return 0, fmt.Errorf("value doesn't contain number; it contains %s", v.Type())
+	}
+	n := fastfloat.ParseUint64BestEffort(v.s)
+	if n == 0 && v.s != "0" {
+		return 0, fmt.Errorf("cannot parse uint64 %q", v.s)
+	}
+	return n, nil
 }
 
 // Bool returns the underlying JSON bool for the v.
@@ -811,9 +958,7 @@ func (v *Value) Bool() (bool, error) {
 }
 
 var (
-	valueTrue   = &Value{t: TypeTrue}
-	valueFalse  = &Value{t: TypeFalse}
-	valueNull   = &Value{t: TypeNull}
-	emptyObject = &Value{t: TypeObject}
-	emptyArray  = &Value{t: TypeArray}
+	valueTrue  = &Value{t: TypeTrue}
+	valueFalse = &Value{t: TypeFalse}
+	valueNull  = &Value{t: TypeNull}
 )

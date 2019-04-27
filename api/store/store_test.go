@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/asdine/storm"
-	"github.com/pkg/errors"
+	"golang.org/x/xerrors"
 )
 
 const (
@@ -14,7 +14,7 @@ const (
 func initTestDatabase() {
 	db, err := storm.Open(testDatabase)
 	if err != nil {
-		panic(errors.Wrap(err, "Cannot open test database"))
+		panic(xerrors.Errorf("Cannot open test database: %w", err))
 	}
 	Auth = newAuthStore(db)
 	Comments = newCommentsStore(db)
@@ -24,6 +24,6 @@ func initTestDatabase() {
 func removeTestDatabase() {
 	err := os.Remove(testDatabase)
 	if err != nil {
-		panic(errors.Wrap(err, "Cannot remove test database"))
+		panic(xerrors.Errorf("Cannot remove test database: %w", err))
 	}
 }

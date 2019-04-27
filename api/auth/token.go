@@ -1,13 +1,13 @@
 package auth
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/dbeliakov/revisor/api/config"
 	"github.com/dbeliakov/revisor/api/store"
 	"github.com/dgrijalva/jwt-go"
+	"golang.org/x/xerrors"
 )
 
 var (
@@ -53,7 +53,7 @@ func validateToken(tokenString string) (jwt.MapClaims, error) {
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		return claims, nil
 	}
-	return jwt.MapClaims{}, errors.New("Token is not valid")
+	return jwt.MapClaims{}, xerrors.New("Token is not valid")
 }
 
 // UserFromToken builds user object using information in token claims
