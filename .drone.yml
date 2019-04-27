@@ -13,7 +13,6 @@ steps:
   - go build
   - go test ./...
 
-steps:
 - name: coverage
   image: golang
   commands:
