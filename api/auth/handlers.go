@@ -7,6 +7,7 @@ import (
 	"github.com/dbeliakov/revisor/api/store"
 	"github.com/dbeliakov/revisor/api/utils"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/xerrors"
 )
 
 // APIUser represents api result struct
@@ -95,7 +96,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err = store.Auth.CreateUser(user)
-	if err == store.ErrUserExists {
+	if xerrors.Is(err, store.ErrUserExists) {
 		logrus.Infof("Login is not free: %s", form.Username)
 		utils.Error(w, utils.JSONErrorResponse{
 			Status:        http.StatusConflict,

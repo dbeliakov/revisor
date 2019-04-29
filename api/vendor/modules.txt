@@ -14,35 +14,34 @@ github.com/go-playground/locales
 github.com/go-playground/locales/currency
 # github.com/go-playground/universal-translator v0.16.0
 github.com/go-playground/universal-translator
-# github.com/gorilla/context v1.1.1
-github.com/gorilla/context
 # github.com/gorilla/handlers v1.4.0
 github.com/gorilla/handlers
-# github.com/gorilla/mux v1.6.2
+# github.com/gorilla/mux v1.7.1
 github.com/gorilla/mux
 # github.com/konsorten/go-windows-terminal-sequences v1.0.1
 github.com/konsorten/go-windows-terminal-sequences
-# github.com/pkg/errors v0.8.0
-github.com/pkg/errors
+# github.com/leodido/go-urn v1.1.0
+github.com/leodido/go-urn
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
 # github.com/satori/go.uuid v1.2.0
 github.com/satori/go.uuid
-# github.com/sirupsen/logrus v1.1.1
+# github.com/sirupsen/logrus v1.4.1
 github.com/sirupsen/logrus
 # github.com/stretchr/testify v1.2.2
 github.com/stretchr/testify/assert
-# github.com/valyala/fastjson v1.0.0
+# github.com/valyala/fastjson v1.4.1
 github.com/valyala/fastjson
 github.com/valyala/fastjson/fastfloat
 # go.etcd.io/bbolt v1.3.2
 go.etcd.io/bbolt
-# golang.org/x/crypto v0.0.0-20181025113841-85e1b3f9139a
+# golang.org/x/crypto v0.0.0-20190426145343-a29dc8fdc734
 golang.org/x/crypto/bcrypt
-golang.org/x/crypto/ssh/terminal
 golang.org/x/crypto/blowfish
-# golang.org/x/sys v0.0.0-20181025063200-d989b31c8746
+# golang.org/x/sys v0.0.0-20190412213103-97732733099d
 golang.org/x/sys/unix
-golang.org/x/sys/windows
-# gopkg.in/go-playground/validator.v9 v9.21.1
+# golang.org/x/xerrors v0.0.0-20190410155217-1f06c39b4373
+golang.org/x/xerrors
+golang.org/x/xerrors/internal
+# gopkg.in/go-playground/validator.v9 v9.28.0
 gopkg.in/go-playground/validator.v9

@@ -22,6 +22,9 @@ steps:
   environment:
     COVERALLS_TOKEN:
       from_secret: coveralls_token
+  when:
+    branch: master
+    event: push
 
 - name: frontend
   image: node:latest
