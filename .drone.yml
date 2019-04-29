@@ -1,20 +1,3 @@
-build_backend: &build_backend
-  image: golang:1.12
-  commands:
-  - cd api
-  - go build
-  - go test ./...
-
-build_frontend: &build_frontend
-  image: node:latest
-  commands:
-  - cd client
-  - npm install
-  - npm run fix-deps
-  - npm run lint
-  - npm run build
-
----
 kind: pipeline
 name: check
 
@@ -23,11 +6,20 @@ workspace:
   path: src/github.com/dbeliakov/revisor
 
 steps:
-- name: check_backend
-  <<: *build_backend
+- name: build_and_check_backend
+  image: golang:1.12
+  commands: &build_and_check_backend
+  - cd api
+  - go build
+  - go test ./...
 
-- name: check_frontend
-  <<: *build_frontend
+- name: build_and_check_frontend
+  commands: &build_and_check_frontend
+  - cd client
+  - npm install
+  - npm run fix-deps
+  - npm run lint
+  - npm run build
 
 trigger:
   event:
@@ -38,10 +30,12 @@ kind: pipeline
 name: build-and-deploy
 
 - name: build_backend
-  <<: *build_backend
+  image: golang:1.12
+  commands: *build_and_check_backend
 
 - name: build_frontend
-  <<: *build_frontend
+  image: node:latest
+  commands: *build_and_check_frontend
 
 - name: coverage
   image: golang
