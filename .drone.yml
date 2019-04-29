@@ -1,17 +1,48 @@
 kind: pipeline
-name: create-docker-img
+name: revisor
 
 workspace:
   base: /go
   path: src/github.com/dbeliakov/revisor
 
-steps:
-- name: backend
-  image: golang
+build_backend: &build_backend
+  image: golang:1.12
   commands:
   - cd api
   - go build
   - go test ./...
+
+build_frontend: &build_frontend
+  image: node:latest
+  commands:
+  - cd client
+  - npm install
+  - npm run fix-deps
+  - npm run lint
+  - npm run build
+
+steps:
+- name: check_backend
+  <<: *build_backend
+  when:
+    event: pull_request
+
+- name: check_frontend
+  <<: *build_frontend
+  when:
+    event: pull_request
+
+- name: build_backend
+  <<: *build_backend
+  when:
+    event: push
+    branch: master
+
+- name: build_frontend
+  <<: *build_frontend
+  when:
+    event: push
+    branch: master
 
 - name: coverage
   image: golang
@@ -25,15 +56,6 @@ steps:
   when:
     branch: master
     event: push
-
-- name: frontend
-  image: node:latest
-  commands:
-  - cd client
-  - npm install
-  - npm run fix-deps
-  - npm run lint
-  - npm run build
 
 - name: publish
   image: plugins/docker
