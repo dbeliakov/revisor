@@ -1,5 +1,5 @@
 kind: pipeline
-name: create-docker-img
+name: build-revisor
 
 workspace:
   base: /go
@@ -12,19 +12,6 @@ steps:
   - cd api
   - go build
   - go test ./...
-
-- name: coverage
-  image: golang
-  commands:
-  - cd api
-  - go get github.com/mattn/goveralls
-  - goveralls -service drone.io
-  environment:
-    COVERALLS_TOKEN:
-      from_secret: coveralls_token
-  when:
-    branch: master
-    event: push
 
 - name: frontend
   image: node:latest
@@ -46,7 +33,18 @@ steps:
       from_secret: docker_password
   when:
     branch: master
-    event: push
+
+- name: coverage
+  image: golang
+  commands:
+  - cd api
+  - go get github.com/mattn/goveralls
+  - goveralls -service drone.io
+  environment:
+    COVERALLS_TOKEN:
+      from_secret: coveralls_token
+  when:
+    branch: master
 
 - name: deploy
   image: appleboy/drone-ssh
@@ -63,5 +61,7 @@ steps:
       - docker-compose up -d
   when:
     branch: master
-    event: push
+
+trigger:
+  event: push
 
