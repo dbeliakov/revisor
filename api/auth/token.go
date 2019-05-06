@@ -19,7 +19,6 @@ const (
 	lastNameKey  = "last_name"
 	loginKey     = "login"
 	expiredTTL   = 7 * 24 * time.Hour
-	refreshTTL   = 5 * 24 * time.Hour
 )
 
 // NewToken generates new JWT token for user

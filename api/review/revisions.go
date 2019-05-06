@@ -10,13 +10,6 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-type modificationType int
-
-const (
-	insertModification modificationType = iota
-	deleteModification modificationType = iota
-)
-
 // DiffType represents type of operation for particular line in diff
 type DiffType int
 

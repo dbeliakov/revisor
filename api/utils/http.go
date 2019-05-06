@@ -41,12 +41,12 @@ func Unauthorized(w http.ResponseWriter) {
 	if err != nil {
 		logrus.Errorf("Cannot create json for unauthorized message: %+v", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Internal Server Error"))
+		_, _ = w.Write([]byte("Internal Server Error"))
 		return
 	}
 
 	w.WriteHeader(http.StatusUnauthorized)
-	w.Write(bytes)
+	_, _ = w.Write(bytes)
 }
 
 // Error writes error response
@@ -55,12 +55,12 @@ func Error(w http.ResponseWriter, response JSONErrorResponse) {
 	if err != nil {
 		logrus.Errorf("Cannot create json for unauthorized message: %+v", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Internal Server Error"))
+		_, _ = w.Write([]byte("Internal Server Error"))
 		return
 	}
 
 	w.WriteHeader(response.Status)
-	w.Write(bytes)
+	_, _ = w.Write(bytes)
 }
 
 // Ok writes error response
@@ -75,12 +75,12 @@ func Ok(w http.ResponseWriter, data interface{}) {
 	if err != nil {
 		logrus.Errorf("Cannot create json for unauthorized message: %+v", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Internal Server Error"))
+		_, _ = w.Write([]byte("Internal Server Error"))
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write(bytes)
+	_, _ = w.Write(bytes)
 }
 
 var (

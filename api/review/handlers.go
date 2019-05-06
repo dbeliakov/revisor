@@ -118,7 +118,7 @@ func NewAPIComment(comment store.Comment) (APIComment, error) {
 }
 
 // OutgoingReviews returns reviews
-var OutgoingReviews = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
+var OutgoingReviews = auth.Required(func(w http.ResponseWriter, r *http.Request) {
 	user, err := auth.UserFromRequest(r)
 	if err != nil {
 		logrus.Errorf("Error while getting user from request context: %+v", err)
@@ -142,7 +142,7 @@ var OutgoingReviews = auth.AuthRequired(func(w http.ResponseWriter, r *http.Requ
 })
 
 // IncomingReviews return reviews
-var IncomingReviews = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
+var IncomingReviews = auth.Required(func(w http.ResponseWriter, r *http.Request) {
 	user, err := auth.UserFromRequest(r)
 	if err != nil {
 		logrus.Errorf("Error while getting user from request context: %+v", err)
@@ -166,7 +166,7 @@ var IncomingReviews = auth.AuthRequired(func(w http.ResponseWriter, r *http.Requ
 })
 
 // NewReview creates new review
-var NewReview = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
+var NewReview = auth.Required(func(w http.ResponseWriter, r *http.Request) {
 	user, err := auth.UserFromRequest(r)
 	if err != nil {
 		logrus.Errorf("Error while getting user from request context: %+v", err)
@@ -235,7 +235,7 @@ var NewReview = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
 })
 
 // Review returns information about review
-var Review = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
+var Review = auth.Required(func(w http.ResponseWriter, r *http.Request) {
 	user, err := auth.UserFromRequest(r)
 	if err != nil {
 		logrus.Errorf("Error while getting user from request context: %+v", err)
@@ -367,7 +367,7 @@ var Review = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
 })
 
 // UpdateReview information or add revision
-var UpdateReview = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
+var UpdateReview = auth.Required(func(w http.ResponseWriter, r *http.Request) {
 	user, err := auth.UserFromRequest(r)
 	if err != nil {
 		logrus.Errorf("Error while getting user from request context: %+v", err)
@@ -475,7 +475,7 @@ var UpdateReview = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request
 })
 
 // Decline review
-var Decline = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
+var Decline = auth.Required(func(w http.ResponseWriter, r *http.Request) {
 	user, err := auth.UserFromRequest(r)
 	if err != nil {
 		logrus.Errorf("Error while getting user from request context: %+v", err)
@@ -524,7 +524,7 @@ var Decline = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
 })
 
 // Accept review
-var Accept = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
+var Accept = auth.Required(func(w http.ResponseWriter, r *http.Request) {
 	user, err := auth.UserFromRequest(r)
 	if err != nil {
 		logrus.Errorf("Error while getting user from request context: %+v", err)
@@ -573,7 +573,7 @@ var Accept = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
 })
 
 // SearchReviewer by login or by name
-var SearchReviewer = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
+var SearchReviewer = auth.Required(func(w http.ResponseWriter, r *http.Request) {
 	user, err := auth.UserFromRequest(r)
 	if err != nil {
 		logrus.Errorf("Error while getting user from request context: %+v", err)

@@ -114,7 +114,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // UserInfoHandler returns info about user
-var UserInfoHandler = AuthRequired(func(w http.ResponseWriter, r *http.Request) {
+var UserInfoHandler = Required(func(w http.ResponseWriter, r *http.Request) {
 	u, err := UserFromRequest(r)
 	if err != nil {
 		logrus.Errorf("Error while getting user from request context: %+v", err)
@@ -125,7 +125,7 @@ var UserInfoHandler = AuthRequired(func(w http.ResponseWriter, r *http.Request) 
 })
 
 // ChangePasswordHandler changes user password
-var ChangePasswordHandler = AuthRequired(func(w http.ResponseWriter, r *http.Request) {
+var ChangePasswordHandler = Required(func(w http.ResponseWriter, r *http.Request) {
 	user, err := UserFromRequest(r)
 	if err != nil {
 		logrus.Errorf("Error while getting user from request context: %+v", err)
