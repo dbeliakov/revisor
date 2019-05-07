@@ -11,7 +11,7 @@ import (
 )
 
 // AddComment to line of review
-var AddComment = auth.AuthRequired(func(w http.ResponseWriter, r *http.Request) {
+var AddComment = auth.Required(func(w http.ResponseWriter, r *http.Request) {
 	user, err := auth.UserFromRequest(r)
 	if err != nil {
 		logrus.Errorf("Error while getting user from request context: %+v", err)

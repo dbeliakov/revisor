@@ -50,7 +50,9 @@ func (s authStoreImpl) CreateUser(user User) error {
 	if err != nil {
 		return xerrors.Errorf("Cannot start transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	var exists User
 	err = tx.One("Login", user.Login, &exists)
@@ -64,7 +66,10 @@ func (s authStoreImpl) CreateUser(user User) error {
 	if err != nil {
 		return xerrors.Errorf("Cannot save user: %w")
 	}
-	tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

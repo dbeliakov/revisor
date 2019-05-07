@@ -17,10 +17,12 @@ type authMiddlewareKey int
 const (
 	// keyUserID key for request context
 	keyUser authMiddlewareKey = iota
+
+	refreshTTL = 5 * 24 * time.Hour
 )
 
 // AuthRequired checks jwt token and sets user_id value to request context
-func AuthRequired(h http.HandlerFunc) http.HandlerFunc {
+func Required(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authString := r.Header.Get("Authorization")
 		bearerLength := len("Bearer ")
@@ -37,7 +39,7 @@ func AuthRequired(h http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 		user := userFromToken(claims)
-		if claims.VerifyExpiresAt(time.Now().Add(5*time.Hour*24).Unix(), false) {
+		if claims.VerifyExpiresAt(time.Now().Add(refreshTTL).Unix(), false) {
 			token, err := newToken(user)
 			if err != nil {
 				logrus.Errorf("Cannot create new token for user: %s, error: %+v", user.Login, err)

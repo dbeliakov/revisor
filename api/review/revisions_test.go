@@ -9,6 +9,7 @@ import (
 
 	"github.com/pmezard/go-difflib/difflib"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/xerrors"
 )
 
@@ -51,9 +52,11 @@ func TestRevisionContent(t *testing.T) {
 		}
 	}
 	checkRevisionsContent()
-	file.AddRevision(difflib.SplitLines(revisions[1]))
+	err := file.AddRevision(difflib.SplitLines(revisions[1]))
+	require.NoError(t, err)
 	checkRevisionsContent()
-	file.AddRevision(difflib.SplitLines(revisions[2]))
+	err = file.AddRevision(difflib.SplitLines(revisions[2]))
+	require.NoError(t, err)
 	checkRevisionsContent()
 }
 
@@ -87,10 +90,10 @@ func TestLineRevisionNumbers(t *testing.T) {
 	}
 	checkLineRevisions()
 	err := file.AddRevision(difflib.SplitLines(revisions[1]))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	checkLineRevisions()
 	err = file.AddRevision(difflib.SplitLines(revisions[2]))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	checkLineRevisions()
 }
 
@@ -124,8 +127,10 @@ func TestDiff(t *testing.T) {
 			}
 		}
 	}
-	file.AddRevision(difflib.SplitLines(revisions[1]))
+	err := file.AddRevision(difflib.SplitLines(revisions[1]))
+	require.NoError(t, err)
 	checkDiffs()
-	file.AddRevision(difflib.SplitLines(revisions[2]))
+	err = file.AddRevision(difflib.SplitLines(revisions[2]))
+	require.NoError(t, err)
 	checkDiffs()
 }
