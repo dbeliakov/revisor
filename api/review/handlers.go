@@ -31,15 +31,15 @@ func hasAccess(login string, review store.Review) bool {
 
 // APIReview represents api result struct
 type APIReview struct {
-	ID             int            `json:"id"`
-	Name           string         `json:"name"`
-	Updated        int64          `json:"updated"`
-	Closed         bool           `json:"closed"`
-	Accepted       bool           `json:"accepted"`
-	Owner          auth.APIUser   `json:"owner"`
-	Reviewers      []auth.APIUser `json:"reviewers"`
-	RevisionsCount int            `json:"revisions_count"`
-	CommentsCount  int            `json:"comments_count"`
+	ID             int          `json:"id"`
+	Name           string       `json:"name"`
+	Updated        int64        `json:"updated"`
+	Closed         bool         `json:"closed"`
+	Accepted       bool         `json:"accepted"`
+	Owner          store.User   `json:"owner"`
+	Reviewers      []store.User `json:"reviewers"`
+	RevisionsCount int          `json:"revisions_count"`
+	CommentsCount  int          `json:"comments_count"`
 }
 
 // NewAPIReview creates new api review from store review
@@ -55,14 +55,14 @@ func NewAPIReview(review store.Review) (APIReview, error) {
 	if err != nil {
 		return APIReview{}, err
 	}
-	result.Owner = auth.NewAPIUser(owner)
-	result.Reviewers = make([]auth.APIUser, 0)
+	result.Owner = owner
+	result.Reviewers = make([]store.User, len(review.Reviewers))
 	for _, login := range review.Reviewers {
 		reviewer, err := store.Auth.FindUserByLogin(login)
 		if err != nil {
 			return APIReview{}, err
 		}
-		result.Reviewers = append(result.Reviewers, auth.NewAPIUser(reviewer))
+		result.Reviewers = append(result.Reviewers, reviewer)
 	}
 	var p fastjson.Parser
 	v, err := p.ParseBytes(review.File)
@@ -93,7 +93,7 @@ func newAPIReviews(reviews []store.Review) ([]APIReview, error) {
 // APIComment represents api result struct
 type APIComment struct {
 	ID      int           `json:"id"`
-	Author  auth.APIUser  `json:"author"`
+	Author  store.User    `json:"author"`
 	Created int64         `json:"created"`
 	Text    string        `json:"text"`
 	LineID  string        `json:"line_id"`
@@ -113,7 +113,7 @@ func NewAPIComment(comment store.Comment) (APIComment, error) {
 	if err != nil {
 		return result, err
 	}
-	result.Author = auth.NewAPIUser(author)
+	result.Author = author
 	return result, nil
 }
 
@@ -188,9 +188,8 @@ var NewReview = auth.Required(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logrus.Warnf("Incorrect base64 file content: %s, error: %+v", form.FileContent, err)
 		utils.Error(w, utils.JSONErrorResponse{
-			Status:        http.StatusBadRequest,
-			Message:       "Incorrect base64 file content",
-			ClientMessage: "Некорректная кодировка файла",
+			Status:  http.StatusBadRequest,
+			Message: "Некорректная кодировка файла",
 		})
 		return
 	}
@@ -201,9 +200,8 @@ var NewReview = auth.Required(func(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			logrus.Infof("Incorrect list of reviewers: %+v", err)
 			utils.Error(w, utils.JSONErrorResponse{
-				Status:        http.StatusNotAcceptable,
-				Message:       "Incorrect list of reviewers",
-				ClientMessage: "Некорректный список ревьюеров",
+				Status:  http.StatusNotAcceptable,
+				Message: "Некорректный список ревьюеров",
 			})
 			return
 		}
@@ -248,9 +246,8 @@ var Review = auth.Required(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logrus.Warnf("Incorrect ID: %+s, error: %+v", vars["id"], err)
 		utils.Error(w, utils.JSONErrorResponse{
-			Status:        http.StatusNotFound,
-			Message:       "No review with id: " + vars["id"],
-			ClientMessage: "Не удалось найти ревью",
+			Status:  http.StatusNotFound,
+			Message: "Не удалось найти ревью",
 		})
 		return
 	}
@@ -258,9 +255,8 @@ var Review = auth.Required(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logrus.Warnf("Cannot find review with id: %+s, error: %+v", vars["id"], err)
 		utils.Error(w, utils.JSONErrorResponse{
-			Status:        http.StatusNotFound,
-			Message:       "No review with id: " + vars["id"],
-			ClientMessage: "Не удалось найти ревью",
+			Status:  http.StatusNotFound,
+			Message: "Не удалось найти ревью",
 		})
 		return
 	}
@@ -284,9 +280,8 @@ var Review = auth.Required(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logrus.Warnf("Incorrect start revision: %+v", err)
 		utils.Error(w, utils.JSONErrorResponse{
-			Status:        http.StatusBadRequest,
-			Message:       "Incorrect start revision",
-			ClientMessage: "Некорректный номер начальной ревизии",
+			Status:  http.StatusBadRequest,
+			Message: "Некорректный номер начальной ревизии",
 		})
 		return
 	}
@@ -294,9 +289,8 @@ var Review = auth.Required(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logrus.Warnf("Incorrect end revision: %+v", err)
 		utils.Error(w, utils.JSONErrorResponse{
-			Status:        http.StatusBadRequest,
-			Message:       "Incorrect end revision",
-			ClientMessage: "Некорректный номер конечной ревизии",
+			Status:  http.StatusBadRequest,
+			Message: "Некорректный номер конечной ревизии",
 		})
 		return
 	}
@@ -304,9 +298,8 @@ var Review = auth.Required(func(w http.ResponseWriter, r *http.Request) {
 	if !hasAccess(user.Login, review) {
 		logrus.Warnf("User %s han no access to review %d", user.Login, review.ID)
 		utils.Error(w, utils.JSONErrorResponse{
-			Status:        http.StatusForbidden,
-			Message:       "No access to this review",
-			ClientMessage: "У вас недостаточно прав для просмотра ревью",
+			Status:  http.StatusForbidden,
+			Message: "У вас недостаточно прав для просмотра ревью",
 		})
 		return
 	}
@@ -380,9 +373,8 @@ var UpdateReview = auth.Required(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logrus.Warnf("Incorrect ID: %s, error: %+v", vars["id"], err)
 		utils.Error(w, utils.JSONErrorResponse{
-			Status:        http.StatusNotFound,
-			Message:       "No review with id: " + vars["id"],
-			ClientMessage: "Не удалось найти ревью",
+			Status:  http.StatusNotFound,
+			Message: "Не удалось найти ревью",
 		})
 		return
 	}
@@ -390,18 +382,16 @@ var UpdateReview = auth.Required(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logrus.Warnf("Cannot find review: %s, error: %+v", vars["id"], err)
 		utils.Error(w, utils.JSONErrorResponse{
-			Status:        http.StatusNotFound,
-			Message:       "No review with id: " + vars["id"],
-			ClientMessage: "Не удалось найти ревью",
+			Status:  http.StatusNotFound,
+			Message: "Не удалось найти ревью",
 		})
 		return
 	}
 	if review.Owner != user.Login {
 		logrus.Warnf("User %s tries to update review %d without being the creator", user.Login, review.ID)
 		utils.Error(w, utils.JSONErrorResponse{
-			Status:        http.StatusForbidden,
-			Message:       "Only owner allowed to update review",
-			ClientMessage: "Только автор ревью может его обновлять",
+			Status:  http.StatusForbidden,
+			Message: "Только автор ревью может его обновлять",
 		})
 		return
 	}
@@ -419,9 +409,8 @@ var UpdateReview = auth.Required(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logrus.Warnf("Incorrect base64 file content: %s, error: %+v", form.NewRevision, err)
 		utils.Error(w, utils.JSONErrorResponse{
-			Status:        http.StatusBadRequest,
-			Message:       "Incorrect base64 file content",
-			ClientMessage: "Некорректная кодировка файла",
+			Status:  http.StatusBadRequest,
+			Message: "Некорректная кодировка файла",
 		})
 		return
 	}
@@ -433,9 +422,8 @@ var UpdateReview = auth.Required(func(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			logrus.Infof("Incorrect list of reviewers: %+v", err)
 			utils.Error(w, utils.JSONErrorResponse{
-				Status:        http.StatusNotAcceptable,
-				Message:       "Incorrect list of reviewers",
-				ClientMessage: "Некорректный список ревьюеров",
+				Status:  http.StatusNotAcceptable,
+				Message: "Некорректный список ревьюеров",
 			})
 			return
 		}
@@ -487,9 +475,8 @@ var Decline = auth.Required(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logrus.Warnf("Incorrect ID: %s, error: %+v", vars["id"], err)
 		utils.Error(w, utils.JSONErrorResponse{
-			Status:        http.StatusNotFound,
-			Message:       "No review with id: " + vars["id"],
-			ClientMessage: "Не удалось найти ревью",
+			Status:  http.StatusNotFound,
+			Message: "Не удалось найти ревью",
 		})
 		return
 	}
@@ -497,18 +484,16 @@ var Decline = auth.Required(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logrus.Warnf("Cannot find review: %d, error: %+v", reviewID, err)
 		utils.Error(w, utils.JSONErrorResponse{
-			Status:        http.StatusNotFound,
-			Message:       "No review with id: " + vars["id"],
-			ClientMessage: "Не удалось найти ревью",
+			Status:  http.StatusNotFound,
+			Message: "Не удалось найти ревью",
 		})
 		return
 	}
 	if !hasAccess(user.Login, review) {
 		logrus.Warnf("User %s has no access to review %d", user.Login, review.ID)
 		utils.Error(w, utils.JSONErrorResponse{
-			Status:        http.StatusForbidden,
-			Message:       "No access to this review",
-			ClientMessage: "У вас недостаточно прав для закрытия ревью",
+			Status:  http.StatusForbidden,
+			Message: "У вас недостаточно прав для закрытия ревью",
 		})
 		return
 	}
@@ -536,9 +521,8 @@ var Accept = auth.Required(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logrus.Warnf("Incorrect ID: %s, error: %+v", vars["id"], err)
 		utils.Error(w, utils.JSONErrorResponse{
-			Status:        http.StatusNotFound,
-			Message:       "No review with id: " + vars["id"],
-			ClientMessage: "Не удалось найти ревью",
+			Status:  http.StatusNotFound,
+			Message: "Не удалось найти ревью",
 		})
 		return
 	}
@@ -546,18 +530,16 @@ var Accept = auth.Required(func(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logrus.Warnf("Cannot find review: %s, error: %+v", vars["id"], err)
 		utils.Error(w, utils.JSONErrorResponse{
-			Status:        http.StatusNotFound,
-			Message:       "No review with id: " + vars["id"],
-			ClientMessage: "Не удалось найти ревью",
+			Status:  http.StatusNotFound,
+			Message: "Не удалось найти ревью",
 		})
 		return
 	}
 	if review.Owner == user.Login || !hasAccess(user.Login, review) {
 		logrus.Warnf("User %s has no access to review %d", user.Login, review.ID)
 		utils.Error(w, utils.JSONErrorResponse{
-			Status:        http.StatusForbidden,
-			Message:       "No access to this review",
-			ClientMessage: "У вас недостаточно прав для закрытия ревью",
+			Status:  http.StatusForbidden,
+			Message: "У вас недостаточно прав для закрытия ревью",
 		})
 		return
 	}
@@ -584,9 +566,8 @@ var SearchReviewer = auth.Required(func(w http.ResponseWriter, r *http.Request) 
 	if !ok || len(query) == 0 || len(query[0]) == 0 {
 		logrus.Warnf("Empty query for search")
 		utils.Error(w, utils.JSONErrorResponse{
-			Status:        http.StatusBadRequest,
-			Message:       "Empty Query",
-			ClientMessage: "Пустой запрос для поиска",
+			Status:  http.StatusBadRequest,
+			Message: "Пустой запрос для поиска",
 		})
 		return
 	}
@@ -595,15 +576,10 @@ var SearchReviewer = auth.Required(func(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		logrus.Errorf("Cannot find reviewers: %+v", err)
 		utils.Error(w, utils.JSONErrorResponse{
-			Status:        http.StatusInternalServerError,
-			Message:       "Cannot find users",
-			ClientMessage: "Не удалось произвести поиск пользователей",
+			Status:  http.StatusInternalServerError,
+			Message: "Не удалось произвести поиск пользователей",
 		})
 		return
 	}
-	res := make([]auth.APIUser, 0)
-	for _, r := range results {
-		res = append(res, auth.NewAPIUser(r))
-	}
-	utils.Ok(w, res)
+	utils.Ok(w, results)
 })

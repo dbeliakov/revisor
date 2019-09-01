@@ -5,12 +5,14 @@ import (
 	"golang.org/x/xerrors"
 )
 
+// TODO hide password hash for user
+
 // User represents information about registered user
 type User struct {
-	FirstName    string `storm:"index"`
-	LastName     string `storm:"index"`
-	Login        string `storm:"id"`
-	PasswordHash string
+	FirstName    string `storm:"index" json:"first_name"`
+	LastName     string `storm:"index" json:"last_name"`
+	Login        string `storm:"id" json:"username"`
+	PasswordHash string `json:"password_hash"`
 }
 
 // AuthStore provides access to auth module storage

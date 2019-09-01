@@ -9,40 +9,46 @@ import (
 	"github.com/dbeliakov/revisor/api/config"
 	"github.com/dbeliakov/revisor/api/review"
 	"github.com/dbeliakov/revisor/api/store"
+	"github.com/go-chi/chi"
 	gh "github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
-func addAPIHandlers(base string, r *mux.Router) {
-	// Auth handlers
-	r.HandleFunc(base+"/auth/login", auth.LoginHandler).Methods("POST")
-	r.HandleFunc(base+"/auth/signup", auth.SignUpHandler).Methods("POST")
-	r.HandleFunc(base+"/auth/user", auth.UserInfoHandler).Methods("GET")
-	r.HandleFunc(base+"/auth/change/password", auth.ChangePasswordHandler).Methods("POST")
-
-	// Review handlers
-	r.HandleFunc(base+"/reviews/outgoing", review.OutgoingReviews).Methods("GET")
-	r.HandleFunc(base+"/reviews/incoming", review.IncomingReviews).Methods("GET")
-	r.HandleFunc(base+"/reviews/new", review.NewReview).Methods("POST")
-	r.HandleFunc(base+"/reviews/{id}", review.Review).Methods("GET")
-	r.HandleFunc(base+"/reviews/{id}/update", review.UpdateReview).Methods("POST")
-	r.HandleFunc(base+"/reviews/{id}/accept", review.Accept).Methods("POST")
-	r.HandleFunc(base+"/reviews/{id}/decline", review.Decline).Methods("POST")
-	r.HandleFunc(base+"/users/search", review.SearchReviewer).Methods("GET")
-
-	// Comments handlers
-	r.HandleFunc(base+"/comments/add", comments.AddComment).Methods("POST")
+func addAuthHandlers(base string, logger zap.Logger, service auth.Service, r *chi.Mux) {
+	authRouter := r.Route("/auth", nil)
+	authRouter.Use(auth.NewRequiredMiddleware(logger))
+	authRouter.Post("/login", service.HandleLogin)
+	authRouter.Post("/signup", service.HandleSignUp)
+	authRouter.Post("/user", service.HandleUserInfo)
+	// TODO replace with other URL
+	authRouter.Post("change/password", service.HandleChangePassword)
 }
 
-func addClientFilesHandlers(r *mux.Router) {
-	r.PathPrefix("/").Handler(http.FileServer(http.Dir(config.ClientFilesDir)))
+func addAPIHandlers(base string, r *chi.Mux) {
+	// Review handlers
+	r.Get(base+"/reviews/outgoing", review.OutgoingReviews)
+	r.Get(base+"/reviews/incoming", review.IncomingReviews)
+	r.Post(base+"/reviews/new", review.NewReview)
+	r.Get(base+"/reviews/{id}", review.Review)
+	r.Post(base+"/reviews/{id}/update", review.UpdateReview)
+	r.Post(base+"/reviews/{id}/accept", review.Accept)
+	r.Post(base+"/reviews/{id}/decline", review.Decline)
+	r.Get(base+"/users/search", review.SearchReviewer)
+
+	// Comments handlers
+	r.Post(base+"/comments/add", comments.AddComment)
+}
+
+func addClientFilesHandlers(r *chi.Mux) {
+	// TODO check if it is correct
+	r.Handle("/*", http.FileServer(http.Dir(config.ClientFilesDir)))
 }
 
 func main() {
 	store.InitStore()
 
-	r := mux.NewRouter()
+	r := chi.NewRouter()
 	addAPIHandlers("/api", r)
 	addClientFilesHandlers(r)
 

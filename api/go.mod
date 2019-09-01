@@ -5,6 +5,7 @@ require (
 	github.com/Sereal/Sereal v0.0.0-20190430090706-4291fcd32c9d // indirect
 	github.com/asdine/storm v2.1.2+incompatible
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/go-playground/locales v0.12.1 // indirect
 	github.com/go-playground/universal-translator v0.16.0 // indirect
 	github.com/golang/protobuf v1.3.1 // indirect
@@ -13,6 +14,7 @@ require (
 	github.com/gorilla/mux v1.7.1
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/leodido/go-urn v1.1.0 // indirect
+	github.com/pkg/errors v0.8.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.4.1
@@ -20,6 +22,9 @@ require (
 	github.com/valyala/fastjson v1.4.1
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
 	go.etcd.io/bbolt v1.3.2 // indirect
+	go.uber.org/atomic v1.4.0 // indirect
+	go.uber.org/multierr v1.1.0 // indirect
+	go.uber.org/zap v1.10.0
 	golang.org/x/crypto v0.0.0-20190426145343-a29dc8fdc734
 	golang.org/x/xerrors v0.0.0-20190410155217-1f06c39b4373
 	google.golang.org/appengine v1.5.0 // indirect

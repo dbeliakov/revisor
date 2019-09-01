@@ -8,20 +8,50 @@ import (
 	"github.com/dbeliakov/revisor/api/store"
 	"github.com/dbeliakov/revisor/api/utils"
 	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	"golang.org/x/xerrors"
 )
 
 // authMiddlewareKey type for request context
-type authMiddlewareKey int
+type authMiddlewareKey struct{}
 
 const (
-	// keyUserID key for request context
-	keyUser authMiddlewareKey = iota
-
 	refreshTTL = 5 * 24 * time.Hour
 )
 
-// AuthRequired checks jwt token and sets user_id value to request context
+// Required checks jwt token and sets user_id value to request context
+func NewRequiredMiddleware(logger zap.Logger) func(h http.Handler) http.Handler {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+			authString := r.Header.Get("Authorization")
+			bearerLength := len("Bearer ")
+			if len(authString) < bearerLength {
+				logger.Warn("Incorrect length of \"Authorization\" header", zap.Int("length", len(authString)))
+				utils.HTTPUnauthorized(rw)
+				return
+			}
+			tokenString := authString[bearerLength:]
+			claims, err := validateToken(tokenString)
+			if err != nil {
+				logger.Warn("Cannot validate JWT-token", zap.Error(err))
+				utils.HTTPUnauthorized(rw)
+				return
+			}
+			user := userFromToken(claims)
+			if claims.VerifyExpiresAt(time.Now().Add(refreshTTL).Unix(), false) {
+				token, err := newToken(user)
+				if err != nil {
+					logger.Warn("Cannot create new token for user", zap.Error(err), zap.String("username", user.Login))
+				} else {
+					rw.Header().Add("Authorization", "Bearer "+token)
+				}
+			}
+			h.ServeHTTP(rw, r.WithContext(context.WithValue(r.Context(), authMiddlewareKey{}, user)))
+		})
+	}
+}
+
+// Required checks jwt token and sets user_id value to request context (deprecated)
 func Required(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		authString := r.Header.Get("Authorization")
@@ -47,13 +77,13 @@ func Required(h http.HandlerFunc) http.HandlerFunc {
 				w.Header().Add("Authorization", "Bearer "+token)
 			}
 		}
-		h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), keyUser, user)))
+		h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), authMiddlewareKey{}, user)))
 	}
 }
 
 // UserFromRequest extracts user with UserID, specified in request context
 func UserFromRequest(r *http.Request) (store.User, error) {
-	u := r.Context().Value(keyUser)
+	u := r.Context().Value(authMiddlewareKey{})
 	if u == nil {
 		return store.User{}, xerrors.New("No \"keyUser\" value in request context")
 	}

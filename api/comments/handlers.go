@@ -42,9 +42,8 @@ var AddComment = auth.Required(func(w http.ResponseWriter, r *http.Request) {
 		if exists, err := store.Comments.CheckExists(form.ReviewID, comment.ParentID); err != nil || !exists {
 			logrus.Warnf("Cannot find parent comment: %+v", err)
 			utils.Error(w, utils.JSONErrorResponse{
-				Status:        http.StatusBadRequest,
-				Message:       "Cannot find parent comment",
-				ClientMessage: "Сервер получил некорректный запрос",
+				Status:  http.StatusBadRequest,
+				Message: "Сервер получил некорректный запрос",
 			})
 			return
 		}
