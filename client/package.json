@@ -9,7 +9,7 @@
     "fix-deps": "mv node_modules/@types/highlight.js node_modules/@types/highlightjs"
   },
   "dependencies": {
-    "axios": "^0.18.0",
+    "axios": "^0.21.1",
     "diff2html": "2.3.3",
     "highlightjs": "^9.10.0",
     "jquery-ui": "^1.12.1",
