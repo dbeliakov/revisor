@@ -13,7 +13,7 @@
     "diff2html": "2.3.3",
     "highlightjs": "^9.10.0",
     "jquery-ui": "^1.12.1",
-    "marked": "^0.6.2",
+    "marked": "^4.0.10",
     "semantic-ui-css": "^2.3.3",
     "vue": "^2.5.16",
     "vue-class-component": "^6.2.0",
